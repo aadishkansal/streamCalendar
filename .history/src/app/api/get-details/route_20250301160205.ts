@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from '';
 import dbConnect from '@/lib/dbConnect';
 
 const API_KEY = process.env.YOUTUBE_API_KEY as string; // Ensure API key is treated as a string
