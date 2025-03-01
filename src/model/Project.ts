@@ -4,9 +4,9 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IProject extends Document {
   userId: Types.ObjectId;
-  titles: string[];
-  urls: string[];
-  durations: string[];
+  playListId: Types.ObjectId;
+  title: string;
+  url: string;
   completed: Boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -21,18 +21,19 @@ const projectSchema: Schema<IProject> = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    titles: [{ type: String, required: true, maxLength: 50 }],
-    urls: {
-      type: [String], 
+    playListId:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PlayList",
+      required: true,
+    },
+    title: { type: String, required: true, maxLength: 50 },
+    url: {
+      type: String, 
       required: true,
       validate: {
         validator: (values: string[]) => values.every((url) => urlRegex.test(url)),
         message: "Invalid URL format",
       },
-    },
-    durations: {
-      type: [String], 
-      required: true,
     },
     completed: {type: Boolean, required: true},
 

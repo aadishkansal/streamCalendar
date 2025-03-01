@@ -1,20 +1,64 @@
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession, User } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/options";
+import dbConnect from "@/lib/dbConnect";
+import Playlist from "@/model/Playlist";
+import mongoose from "mongoose";
 
-const API_KEY = process.env.YOUTUBE_API_KEY as string; // Ensure API key is treated as a string
+const API_KEY = process.env.YOUTUBE_API_KEY as string;
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   await dbConnect();
 
   try {
-    const { url } = await request.json(); // TypeScript assumes `request.json()` returns `any`
+    const session = await getServerSession(authOptions);
+    const user: User = session?.user as User;
+
+    if (!session || !user) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Not authenticated" }),
+        { status: 401 }
+      );
+    }
+
+    const userId = new mongoose.Types.ObjectId(user._id);
+    const { url } = await request.json();
+
+    if (!url || !userId) {
+      return NextResponse.json(
+        { success: false, message: "Missing playlist URL or user ID" },
+        { status: 400 }
+      );
+    }
 
     // Extract Playlist ID from URL
     const urlParams = new URL(url);
     const playlistId = urlParams.searchParams.get("list");
 
     if (!playlistId) {
-      return NextResponse.json({ success: false, message: "Invalid playlist URL" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Invalid playlist URL" },
+        { status: 400 }
+      );
+    }
+
+    const existingPlaylist = await Playlist.findOne({ playlistId });
+
+    if (existingPlaylist) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Playlist already exists",
+          playlistId: existingPlaylist._id,
+          data: {
+            title: existingPlaylist.title,
+            thumbnail: existingPlaylist.thumbnail,
+            description: existingPlaylist.description,
+            channelName: existingPlaylist.channelName,
+          },
+        },
+        { status: 200 }
+      );
     }
 
     // Fetch Playlist Details
@@ -24,7 +68,10 @@ export async function GET(request: NextRequest) {
     const playlistData = await playlistRes.json();
 
     if (!playlistData.items || playlistData.items.length === 0) {
-      return NextResponse.json({ success: false, message: "Playlist not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Playlist not found" },
+        { status: 404 }
+      );
     }
 
     const playlist = playlistData.items[0];
@@ -37,7 +84,7 @@ export async function GET(request: NextRequest) {
     // Fetch Playlist Videos
     let totalDurationSeconds = 0;
     let nextPageToken = "";
-    let videoList: { title: string; url: string; duration: string }[] = []; // Typed video list
+    let videoList: { title: string; url: string; duration: string }[] = [];
 
     do {
       const videosRes = await fetch(
@@ -45,9 +92,15 @@ export async function GET(request: NextRequest) {
       );
       const videosData = await videosRes.json();
 
-      const videoIds = videosData.items.map((item: any) => item.contentDetails.videoId).join(",");
+      if (!videosData.items || videosData.items.length === 0) break;
 
-      // Fetch Video Details for duration
+      const videoIds = videosData.items
+        .map((item: any) => item.contentDetails.videoId)
+        .join(",");
+
+      if (!videoIds) break; // Prevent API call with empty video IDs
+
+      // Fetch Video Durations
       const detailsRes = await fetch(
         `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`
       );
@@ -58,12 +111,10 @@ export async function GET(request: NextRequest) {
         const videoId = item.contentDetails.videoId;
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-        // Get duration
         const durationISO = detailsData.items[index]?.contentDetails?.duration;
-        const durationSeconds = parseDuration(durationISO);
+        const durationSeconds = durationISO ? parseDuration(durationISO) : 0;
         totalDurationSeconds += durationSeconds;
 
-        // Store in structured format
         videoList.push({
           title: videoTitle,
           url: videoUrl,
@@ -71,31 +122,45 @@ export async function GET(request: NextRequest) {
         });
       });
 
-      nextPageToken = videosData.nextPageToken;
+      nextPageToken = videosData.nextPageToken || "";
     } while (nextPageToken);
 
     // Convert total duration to HH:MM:SS format
     const totalDuration = formatDuration(totalDurationSeconds);
 
+    const playlistDb = new Playlist({
+      playlistId: playlistId,
+      title: playlistTitle,
+      thumbnail: playlistThumbnail,
+      description: playlistDescription,
+      totalVideos,
+      totalDuration,
+      channelName,
+      videos: videoList,
+    });
+
+    await playlistDb.save();
+
     return NextResponse.json(
       {
         success: true,
         message: "Details fetched successfully",
+        playlistId: playlistDb._id,
         data: {
           title: playlistTitle,
           thumbnail: playlistThumbnail,
           description: playlistDescription,
-          totalVideos,
-          totalDuration,
           channelName,
-          videos: videoList,
         },
       },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error getting details:", error);
-    return NextResponse.json({ success: false, message: "Error getting details" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Error getting details" },
+      { status: 500 }
+    );
   }
 }
 
@@ -118,3 +183,33 @@ function formatDuration(totalSeconds: number): string {
   const seconds = totalSeconds % 60;
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
+
+/* 
+data -> 
+{
+  "success": true,
+  "message": "Details fetched successfully",
+  "data": {
+    "title": "Top 100 Songs 2024",
+    "thumbnail": "https://i.ytimg.com/vi/xyz123/hqdefault.jpg",
+    "description": "This is the top 100 songs playlist of 2024.",
+    "totalVideos": 100,
+    "totalDuration": "05:45:30",
+    "channelName": "Music Hits",
+    "videos": [
+      {
+        "title": "Song One",
+        "url": "https://www.youtube.com/watch?v=abc123"
+      },
+      {
+        "title": "Song Two",
+        "url": "https://www.youtube.com/watch?v=def456"
+      },
+      {
+        "title": "Song Three",
+        "url": "https://www.youtube.com/watch?v=ghi789"
+      }
+    ]
+  }
+}
+*/
