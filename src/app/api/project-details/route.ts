@@ -1,27 +1,84 @@
-import dbConnect from '@/lib/dbConnect';
-import ProjectModel from '@/model/Project';
+import dbConnect from "@/lib/dbConnect";
+import { getServerSession, User } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/options";
+import mongoose from "mongoose";
+import { NextResponse } from "next/server";
+import Project from "@/model/Project";
 
 export async function POST(request: Request) {
   await dbConnect();
 
   try {
-    const { title, datestart, dateEnd, timeSlotStart, timeSlotEnd, daysSelected } = await request.json();
+    const session = await getServerSession(authOptions);
+    const user: User = session?.user as User;
 
-    // need to work on this data after making sure how we are going to store relevant data in the backend. 
-    // This is the most important route alongside get-details (where we manage how to fetch details from API)
-    
-    return Response.json(
-        {
-          success: true,
-          message:
-            'Details fetched successfully',
-        },
-        { status: 200 }
+    if (!session || !user) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Not authenticated" }),
+        { status: 401 }
       );
-  } catch (error) {
-    console.error('Error getting details:', error);
+    }
+
+    const userId = new mongoose.Types.ObjectId(user._id);
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "Missing playlist URL or user ID" },
+        { status: 400 }
+      );
+    }
+
+    const {
+      playlistId,
+      title,
+      url,
+      datestart,
+      dateEnd,
+      timeSlotStart,
+      timeSlotEnd,
+      daysSelected,
+    } = await request.json();
+
+    if (
+      !playlistId ||
+      !title ||
+      !datestart ||
+      !dateEnd ||
+      !timeSlotStart ||
+      !timeSlotEnd ||
+      !daysSelected
+    ) {
+      return Response.json(
+        { success: false, message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const project = await Project.create({
+      userId,
+      playlistId,
+      title,
+      url,
+      datestart,
+      dateEnd,
+      timeSlotStart,
+      timeSlotEnd,
+      daysSelected,
+      completed: false,
+    });
+    await project.save();
+
     return Response.json(
-      { success: false, message: 'Error getting details' },
+      {
+        success: true,
+        message: "Details stored successfully",
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error storing details:", error);
+    return Response.json(
+      { success: false, message: "Error storing details" },
       { status: 500 }
     );
   }

@@ -1,18 +1,18 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-// Subject to change
-
 export interface IProject extends Document {
   userId: Types.ObjectId;
-  playListId: Types.ObjectId;
+  playlistId: Types.ObjectId;
   title: string;
-  url: string;
-  completed: Boolean;
+  dateStart: Date;
+  dateEnd: Date;
+  timeSlotStart: string;
+  timeSlotEnd: string;
+  daysSelected: string[];
+  completed: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
-
-const urlRegex = /^(https?:\/\/)?([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})(:[0-9]{1,5})?(\/[^\s]*)?$/;
 
 const projectSchema: Schema<IProject> = new mongoose.Schema(
   {
@@ -21,22 +21,18 @@ const projectSchema: Schema<IProject> = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    playListId:{
+    playlistId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "PlayList",
+      ref: "Playlist",
       required: true,
     },
     title: { type: String, required: true, maxLength: 50 },
-    url: {
-      type: String, 
-      required: true,
-      validate: {
-        validator: (values: string[]) => values.every((url) => urlRegex.test(url)),
-        message: "Invalid URL format",
-      },
-    },
-    completed: {type: Boolean, required: true},
-
+    dateStart: { type: Date, required: true },
+    dateEnd: { type: Date, required: true },
+    timeSlotStart: { type: String, required: true },
+    timeSlotEnd: { type: String, required: true },
+    daysSelected: { type: [String], required: true },
+    completed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
