@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
 
     const playlistDb = new Playlist({
       playlistId: playlistId,
+      url,
       title: playlistTitle,
       thumbnail: playlistThumbnail,
       description: playlistDescription,
