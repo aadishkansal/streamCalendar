@@ -7,6 +7,10 @@ import { signInSchema } from "@/schemas/signInSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { signIn } from "next-auth/react";
+import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function SignInForm() {
   const router = useRouter();
@@ -40,13 +44,13 @@ export default function SignInForm() {
     }
 
     if (result?.url) {
-      router.replace("/"); //user page
+      router.replace("/dashboard");
     }
   };
 
   return(
     <div>
-
+      
     </div>
   );
 }

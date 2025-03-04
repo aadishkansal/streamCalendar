@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { signIn } from "next-auth/react";
 
-export default function SignInForm() {
+export default function VerifyOtp() {
   const router = useRouter();
   const { toast } = useToast();
 

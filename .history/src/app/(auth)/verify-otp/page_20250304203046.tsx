@@ -7,12 +7,13 @@ import { signInSchema } from "@/schemas/signInSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { signIn } from "next-auth/react";
+import { verifyotpSchema } from "@/schemas/verifyotpSchema";
 
-export default function SignInForm() {
+export default function VerifyOtp() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof signInSchema>>({
+  const form = useForm<z.infer<typeof verifyotpSchema>>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
       identifier: "",

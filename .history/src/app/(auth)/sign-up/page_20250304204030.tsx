@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { signUpSchema } from "@/schemas/signUpSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
+gi
 const page = () => {
     const [username, setUsername] = useState('');
     const [usernameMessage, setUsernameMessage] = useState('');

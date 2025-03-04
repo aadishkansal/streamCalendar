@@ -3,24 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { signInSchema } from "@/schemas/signInSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { signIn } from "next-auth/react";
+import { verifyotpSchema } from "@/schemas/verifyotpSchema";
 
-export default function SignInForm() {
+export default function VerifyOtp() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof signInSchema>>({
-    resolver: zodResolver(signInSchema),
+  const form = useForm<z.infer<typeof verifyotpSchema>>({
+    resolver: zodResolver(verifyotpSchema),
     defaultValues: {
-      identifier: "",
-      password: "",
+      email: "",
+      otp: "",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof signInSchema>) => {
+  const onSubmit = async (data: z.infer<typeof verifyotpSchema>) => {
     const result = await signIn("credentials", {
       redirect: false,
       identifier: data.identifier,

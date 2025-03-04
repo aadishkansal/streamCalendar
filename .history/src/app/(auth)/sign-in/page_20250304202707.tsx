@@ -40,7 +40,7 @@ export default function SignInForm() {
     }
 
     if (result?.url) {
-      router.replace("/"); //user page
+      router.replace("/"); //
     }
   };
 

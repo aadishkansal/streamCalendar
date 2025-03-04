@@ -9,7 +9,12 @@ import { ApiResponse } from "@/types/ApiResponse";
 import { useForm } from "react-hook-form";
 import { signUpSchema } from "@/schemas/signUpSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import * as z from "zod";
+import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const page = () => {
     const [username, setUsername] = useState('');
@@ -64,11 +69,7 @@ const page = () => {
         }
     }
 
-    return(
-        <div>
-
-        </div>
-    );
+    return()
 };
 
 export default page;
