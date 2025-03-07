@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         {
           success: false,
           message:
-            'OTP has expired. Please get a new OTP.',
+            'OTP has expired',
         },
         { status: 400 }
       );
