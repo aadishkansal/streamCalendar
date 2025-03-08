@@ -10,6 +10,7 @@ export async function POST(request: Request) {
   try {
     const { name, username, email, password } = await request.json();
 
+    // Convert username to lowercase
     const normalizedUsername = username.toLowerCase();
 
     const existingUserByUsername = await User.findOne({ username: normalizedUsername });

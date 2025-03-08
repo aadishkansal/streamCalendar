@@ -10,9 +10,7 @@ export async function POST(request: Request) {
   try {
     const { name, username, email, password } = await request.json();
 
-    const normalizedUsername = username.toLowerCase();
-
-    const existingUserByUsername = await User.findOne({ username: normalizedUsername });
+    const existingUserByUsername = await User.findOne({ username });
     if (existingUserByUsername) {
       return new Response(
         JSON.stringify({ success: false, message: "Username is taken" }),
@@ -32,7 +30,7 @@ export async function POST(request: Request) {
 
     const newUser = new User({
       name,
-      username: normalizedUsername,
+      username: username.toLowerCase(),
       email,
       password: hashedPassword,
     });

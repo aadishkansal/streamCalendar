@@ -1,4 +1,4 @@
-import { usernameValidation } from "@/schemas/sign";
+import { usernameValidation } from "@/schemas/signUpSchema";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/User";
 import { usernameQuerySchema } from "@/schemas/usernameQuerySchema";

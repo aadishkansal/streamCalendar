@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export default function oSignUp() {
   const router = useRouter();
   const onSubmit = async () => {
-    router.push("/sign-up");
+    router.replace("/sign-up");
   };
 
   return (

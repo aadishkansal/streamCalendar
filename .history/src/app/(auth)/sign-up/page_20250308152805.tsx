@@ -25,7 +25,6 @@ const SignUpPage = () => {
         handleSubmit,
         formState: { errors },
         setValue,
-        clearErrors,
     } = useForm<z.infer<typeof signUpSchema>>({
         resolver: zodResolver(signUpSchema),
     });

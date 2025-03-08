@@ -25,7 +25,6 @@ const SignUpPage = () => {
         handleSubmit,
         formState: { errors },
         setValue,
-        clearErrors,
     } = useForm<z.infer<typeof signUpSchema>>({
         resolver: zodResolver(signUpSchema),
     });
@@ -110,7 +109,6 @@ const SignUpPage = () => {
                                 onChange={(e) => {
                                     setUsername(e.target.value);
                                     setValue("username", e.target.value); // Ensure it updates form state
-                                    if (errors.username) clearErrors("username");
                                 }}
                             />
                             {errors.username && (

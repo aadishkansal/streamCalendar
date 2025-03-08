@@ -110,12 +110,13 @@ const SignUpPage = () => {
                                 onChange={(e) => {
                                     setUsername(e.target.value);
                                     setValue("username", e.target.value); // Ensure it updates form state
-                                    if (errors.username) clearErrors("username");
+                                    clearErrors("username");
                                 }}
                             />
                             {errors.username && (
                                 <p className="text-red-500 text-sm">{errors.username.message}</p>
                             )}
+                            
                             {/* Username availability feedback */}
                             {isCheckingUsername && (
                                 <p className="text-blue-500 text-sm">Checking...</p>

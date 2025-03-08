@@ -31,7 +31,8 @@ export async function GET(request: Request) {
         const normalizedUsername = username.toLowerCase();
 
         const existingVerifiedUser = await UserModel.findOne({
-            username: normalizedUsername,
+            username: username.toLowerCase(),
+            isVerified: true,
         })
 
         if (existingVerifiedUser) {

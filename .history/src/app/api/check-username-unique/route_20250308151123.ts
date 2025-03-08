@@ -28,10 +28,10 @@ export async function GET(request: Request) {
         }
 
         const {username} = result.data;
-        const normalizedUsername = username.toLowerCase();
 
         const existingVerifiedUser = await UserModel.findOne({
-            username: normalizedUsername,
+            username: username,
+            isVerified: true,
         })
 
         if (existingVerifiedUser) {
