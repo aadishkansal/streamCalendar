@@ -19,7 +19,7 @@ export async function GET(req: Request){
             );
         }
 
-        const { projectId } = req.params;
+        const { projectId } = req.query;
 
         const project = await Project.findById(projectId);
         const playlistId = project?.playlistId;

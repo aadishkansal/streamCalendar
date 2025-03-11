@@ -3,7 +3,6 @@ import { getServerSession, User } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import Project from "@/model/Project";
 import Playlist from "@/model/Playlist";
-import { Request } from "express";
 
 export async function GET(req: Request){
     await dbConnect();
@@ -19,7 +18,7 @@ export async function GET(req: Request){
             );
         }
 
-        const { projectId } = req.params;
+        const { projectId } = await req.json();
 
         const project = await Project.findById(projectId);
         const playlistId = project?.playlistId;
