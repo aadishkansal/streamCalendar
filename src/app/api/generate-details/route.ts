@@ -9,7 +9,7 @@ const API_KEY = process.env.YOUTUBE_API_KEY as string;
 
 export async function POST(request: NextRequest) {
   await dbConnect();
-
+  
   try {
     const session = await getServerSession(authOptions);
     const user: User = session?.user as User;
@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           message: "Playlist already exists",
-          playlistId: existingPlaylist._id,
           data: {
+            playlistId: playlistId,
             title: existingPlaylist.title,
             thumbnail: existingPlaylist.thumbnail,
             description: existingPlaylist.description,
@@ -155,8 +155,8 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: "Details fetched successfully",
-        playlistId: playlistDb._id,
         data: {
+          playlistId: playlistDb._id,
           title: playlistTitle,
           thumbnail: playlistThumbnail,
           description: playlistDescription,

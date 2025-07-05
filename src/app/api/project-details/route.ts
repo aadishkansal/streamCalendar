@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/dbConnect";
-import { getServerSession, User as AuthUser} from "next-auth";
+import { getServerSession, User as AuthUser } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import Project from "@/model/Project";
 import User from "@/model/User";
@@ -14,90 +14,81 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
     const user: AuthUser = session?.user as AuthUser;
 
-    if (!session || !user) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Not authenticated" }),
+    if (!session || !user || !user._id) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated or user ID missing" },
         { status: 401 }
       );
     }
 
-    const userId = user._id;
+    // Convert to ObjectId explicitly
+    const userId = new mongoose.Types.ObjectId(user._id as string);
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: "Missing playlist URL or user ID" },
-        { status: 400 }
-      );
-    }
-
+    // ✅ Receive frontend camelCase keys
     const {
       playlistId,
       title,
-      url,
-      dateStart,
-      dateEnd,
-      timeSlotStart,
-      timeSlotEnd,
-      daysSelected,
+      start_date,
+      end_date,
+      time_slot_start,
+      time_slot_end,
+      days_selected,
     } = await request.json();
 
     if (
       !playlistId ||
       !title ||
-      !dateStart ||
-      !dateEnd ||
-      !timeSlotStart ||
-      !timeSlotEnd ||
-      !daysSelected
+      !start_date ||
+      !end_date ||
+      !time_slot_start ||
+      !time_slot_end ||
+      !days_selected
     ) {
-      return Response.json(
+      return NextResponse.json(
         { success: false, message: "Missing required fields" },
         { status: 400 }
       );
     }
-    
-    const playList = await Playlist.findById(playlistId).select("videos");
-    const streakSize = playList?.videos.length || 0; 
-    const streak: Array<boolean> = Array(streakSize).fill(false);
 
+    // ✅ Fetch Playlist
+    const playList = await Playlist.findOne({ playlistId }).select("videos");
+    const streakSize = playList?.videos.length || 0;
+    const streak: boolean[] = Array(streakSize).fill(false);
+
+    // ✅ Map camelCase to snake_case for DB
     const project = await Project.create({
-      userId,
+      user_id: userId,
       playlistId,
       title,
-      url,
-      dateStart,
-      dateEnd,
-      timeSlotStart,
-      timeSlotEnd,
-      daysSelected,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      time_slot_start,
+      time_slot_end,
+      days_selected,
       streak,
       completed: false,
     });
-    await project.save();
 
-    const dbUser = await User.findOne({ _id: new mongoose.Types.ObjectId(userId) });
-
-    if(!dbUser){
+    // ✅ Link project to user
+    const dbUser = await User.findById(userId);
+    if (!dbUser) {
       return NextResponse.json(
         { success: false, message: "User not found" },
         { status: 404 }
       );
     }
 
-    dbUser.projectIds?.push(project._id as mongoose.Types.ObjectId);
+    dbUser.projectIds?.push(project._id as Types.ObjectId);
     await dbUser.save();
 
-    return Response.json(
-      {
-        success: true,
-        message: "Details stored successfully",
-      },
+    return NextResponse.json(
+      { success: true, message: "Details stored successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error storing details:", error);
-    return Response.json(
-      { success: false, message: "Error storing details" },
+    console.error("❌ Error storing details:", error);
+    return NextResponse.json(
+      { success: false, message: "Error storing details", error },
       { status: 500 }
     );
   }

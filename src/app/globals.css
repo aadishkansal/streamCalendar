@@ -8,7 +8,7 @@
 }
 .btn_big1 {
     @apply bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white w-[420px] h-[64px] max-md:w-[300px] 
-           transition-all duration-300 ease-in-out hover:from-[#353188] hover:to-[#5d57ee] hover:shadow-lg;
+           transition-all duration-300 ease-in-out hover:from-[#353188] hover:to-[#5d57ee] hover:shadow-lg border-none outline-none;
 }
 .btn_big2 {
     @apply font-['Inter'] text-black w-[420px] h-[64px] max-md:w-[200px] border border-[#00000080] 

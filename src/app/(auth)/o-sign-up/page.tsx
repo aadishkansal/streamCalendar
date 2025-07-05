@@ -13,7 +13,7 @@ export default function oSignUp() {
   return (
     <div>
       <section className="flex justify-between ">
-        <div className=" hidden lg:flex bg-[#5D57EE80] h-screen w-[500px]"></div>
+        <div className=" hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 backdrop-blur-4xl brightness-120 h-screen w-[500px]"></div>
         <div className="flex flex-col justify-center items-center w-full gap-12 h-screen">
           <h1 className="font-['inter'] text-[24px] font-bold max-md:text-[20px]">
             Sign up to Stream
@@ -24,7 +24,7 @@ export default function oSignUp() {
             title="Sign up with Google"
             variant="btn_big1"
             icon={googleIcon1}
-            onClick={() => {}}
+            onClick={onSubmit}
           />
           <h2>---------- or ----------</h2>
           <Button

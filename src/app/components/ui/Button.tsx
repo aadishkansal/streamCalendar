@@ -6,7 +6,7 @@ type ButtonProps={
   title:string,
   icon?:string,
   variant?:'btn_purple'|'btn_big1' | 'btn_big2'
-  onClick:()=> void;
+  onClick:() => void;
 
 }
 const Button = ({type, title, icon,variant,onClick} : ButtonProps) => {

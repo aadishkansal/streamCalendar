@@ -79,7 +79,7 @@ const SignUpPage = () => {
     return (
         <section className="flex justify-between">
             {/* Left Side */}
-            <div className="hidden lg:flex bg-[#5D57EE80] h-screen w-[500px]"></div>
+            <div className="hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 backdrop-blur-4xl brightness-120 h-screen w-[500px]"></div>
 
             {/* Right Side - Form Section */}
             <div className="flex flex-col justify-center items-center w-full gap-10 h-screen">

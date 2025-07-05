@@ -26,12 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Navbar/>
+        
         <main className="relative over ">
         {children}
         </main>
        
-        <Footer/>
+
       </body>
     </html>
   );

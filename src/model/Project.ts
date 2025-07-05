@@ -1,14 +1,14 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IProject extends Document {
-  userId: Types.ObjectId;
-  playlistId: Types.ObjectId;
+  user_id: Types.ObjectId;
+  playlistId: string;
   title: string;
-  dateStart: Date;
-  dateEnd: Date;
-  timeSlotStart: string;
-  timeSlotEnd: string;
-  daysSelected: string[];
+  start_date: Date;
+  end_date: Date;
+  time_slot_start: string;
+  time_slot_end: string;
+  days_selected: string[];
   streak?: boolean[];
   completed: boolean;
   createdAt: Date;
@@ -17,22 +17,21 @@ export interface IProject extends Document {
 
 const projectSchema: Schema<IProject> = new mongoose.Schema(
   {
-    userId: {
+    user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
     playlistId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Playlist",
+      type: String,
       required: true,
     },
     title: { type: String, required: true, maxLength: 50 },
-    dateStart: { type: Date, required: true },
-    dateEnd: { type: Date, required: true },
-    timeSlotStart: { type: String, required: true },
-    timeSlotEnd: { type: String, required: true },
-    daysSelected: { type: [String], required: true },
+    start_date: { type: Date, required: true },
+    end_date: { type: Date, required: true },
+    time_slot_start: { type: String, required: true },
+    time_slot_end: { type: String, required: true },
+    days_selected: { type: [String], required: true },
     streak: { type: [Boolean] },
     completed: { type: Boolean, default: false },
   },

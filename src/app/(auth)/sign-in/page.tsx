@@ -29,6 +29,7 @@ export default function SignInForm() {
       redirect: false,
       identifier: data.identifier,
       password: data.password,
+      callbackUrl: "/dashboard",
     });
 
     if (result?.error) {
@@ -37,15 +38,16 @@ export default function SignInForm() {
       return;
     }
 
-    if (result?.url) {
-      router.replace("/"); // Redirect to user dashboard
+    if (result?.ok) {
+      console.log(result);
+      router.push("/dashboard");
     }
   };
 
   return (
     <section className="flex justify-between">
       {/* Left Side (Hidden on Small Screens) */}
-      <div className="hidden lg:flex bg-[#5D57EE80] h-screen w-[500px]"></div>
+      <div className="hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 backdrop-blur-4xl brightness-120h-screen w-[500px]"></div>
 
       {/* Right Side - Form Section */}
       <div className="flex flex-col justify-center items-center w-full gap-10 h-screen">
@@ -92,7 +94,7 @@ export default function SignInForm() {
             </div>
 
             <input
-              className="border border-[#5D57EE80] rounded-xl w-[540px] h-12 p-4 max-md:w-[360px]"
+              className="border border-[#5D57EE80] rounded-xl w-[540px] h-12 p-4 max-md:w-[360px] mb-3"
               type="password"
               {...register("password")} // Connects to useForm
             />

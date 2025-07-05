@@ -18,6 +18,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  if(url.pathname.startsWith("/sign-in")){
+    console.log(token);
+  }
+
   if (!token && url.pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
