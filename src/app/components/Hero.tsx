@@ -40,19 +40,30 @@ const Hero = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row items-center w-full max-w-3xl mt-6">
-        <input
-          ref={inputRef}
-          type="search"
-          placeholder="Enter the playlist link"
-          className="flex-grow p-3 rounded-s-full sm:rounded-s-full sm:rounded-e-none text-black w-full sm:w-auto"
-        />
-        <button
-          onClick={handleSubmit}
-          className="bg-gradient-to-r from-[#5d57ee] to-[#353188] w-full sm:w-[140px] h-[51px] rounded-e-full text-white font-semibold text-base mt-4 sm:mt-0"
-        >
-          Generate
-        </button>
-      </div>
+  <div className="relative flex-grow w-full sm:w-auto">
+    {/* Search icon */}
+    <img
+      src="/search.svg"
+      alt="Search"
+      className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 pointer-events-none"
+    />
+
+    {/* Input with left padding */}
+    <input
+      ref={inputRef}
+      type="search"
+      placeholder="Enter the playlist link"
+      className="w-full p-3 pl-12 rounded-s-full text-black"
+    />
+  </div>
+
+  <button
+    onClick={handleSubmit}
+    className="bg-gradient-to-r from-[#5d57ee] to-[#353188] w-full sm:w-[140px] h-[51px] rounded-e-full text-white font-semibold text-base mt-4 sm:mt-0"
+  >
+    Generate
+  </button>
+</div>
 
     </div>
   );

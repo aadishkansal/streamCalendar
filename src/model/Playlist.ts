@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IPlaylist extends Document {
   playlistId: string;
   title: string;
-  description: string;
+  description?: string;
   url: string;
   thumbnail: string;
   totalVideos: number;
@@ -23,7 +23,7 @@ const PlaylistSchema: Schema<IPlaylist> = new mongoose.Schema(
   {
     playlistId: { type: String, required: true, unique: true },
     title: { type: String, required: true, maxLength: 100 },
-    description: { type: String, required: true },
+    description: { type: String, required: false, default: "No description" },
     url: {
       type: String,
       required: true,

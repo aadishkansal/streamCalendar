@@ -48,7 +48,9 @@ const Navbar = () => {
       </ul>
       </div>
       <div className="flex justify-between place-items-center">
-      <a className="px-2 text-16 font-['inter'] font-semibold  ">Login</a>
+      <a className="px-2 text-16 font-['inter'] font-semibold  "
+      href="/sign-in"
+      >Login</a>
       <Button 
       type="button"
       title="Sign up"

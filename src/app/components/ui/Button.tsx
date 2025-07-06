@@ -5,14 +5,15 @@ type ButtonProps={
   type:'button' | 'submit',
   title:string,
   icon?:string,
-  variant?:'btn_purple'|'btn_big1' | 'btn_big2'
+  variant?:'btn_purple'|'btn_big1' | 'btn_big2',
+  className?: string,
   onClick:() => void;
 
 }
-const Button = ({type, title, icon,variant,onClick} : ButtonProps) => {
+const Button = ({type, title, icon,variant,className,onClick} : ButtonProps) => {
   return (
 <button  
-className={`rounded-full flex gap-3 justify-center items-center  border ${variant} `}
+className={`rounded-full flex gap-3 justify-center items-center  border ${variant} ${className ?? ''} `}
 type={type}
 onClick={onClick}
 >

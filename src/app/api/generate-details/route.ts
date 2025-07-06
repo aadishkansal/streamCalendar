@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const playlist = playlistData.items[0];
     const playlistTitle = playlist.snippet.title;
     const playlistThumbnail = playlist.snippet.thumbnails?.high?.url;
-    const playlistDescription = playlist.snippet.description;
+    const playlistDescription = playlist.snippet.description || "No description";
     const totalVideos = playlist.contentDetails.itemCount;
     const channelName = playlist.snippet.channelTitle;
 

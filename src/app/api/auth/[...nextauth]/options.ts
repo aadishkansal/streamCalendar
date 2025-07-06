@@ -38,9 +38,12 @@ export const authOptions: NextAuthOptions = {
           }
 
           return {
-            _id: user._id,
+            id: user._id.toString(),
+            _id: user._id.toString(),
+            name: user.name,
             username: user.username,
-          }; 
+            projectIds: user.projectIds,
+          };
         } catch (err: any) {
           console.error("Authorization error:", err);
           throw new Error("Unable to log in"); 
@@ -51,18 +54,28 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ user, token }) {
       if (user) {
-        token._id = user._id;
-        token.username = user.username;
+        token._id = user.id || (user as any)._id;
+        token.name = user.name;
+        token.username = (user as any).username;
+        token.projectIds = (user as any).projectIds;
+      } else {
+        if (!token._id && token.sub) {
+          token._id = token.sub;
+        }
       }
+      
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user = {
-          _id: token._id,
-          username: token.username,
+          _id: token._id as string,
+          name: token.name as string,
+          username: token.username as string,
+          projectIds: token.projectIds as any[],
         };
       }
+      
       return session;
     },
   },

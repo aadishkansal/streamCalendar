@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     const user: AuthUser = session?.user as AuthUser;
-
+    
     if (!session || !user || !user._id) {
       return NextResponse.json(
         { success: false, message: "Not authenticated or user ID missing" },
