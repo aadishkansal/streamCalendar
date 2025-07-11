@@ -1,26 +1,24 @@
-"use client";
+"use client"
 
-import Hero from "../components/Hero";
-import Image from "next/image";
-import Streaks from "../components/Streaks";
-import Sidebbar from "../components/Sidebbar";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import Render from "../components/Render";
-import CalendarApp from "../components/CalendarApp";
+import { use } from 'react'
+import CalendarApp from '../components/CalendarApp'
+import Navbar from '../components/Navbar'
+import Hero from '../components/Hero'
 
+interface PageProps {
+  params: Promise<{
+    projectId: string
+  }>
+}
 
-
-// 👇 create the localizer here
-
-
-export default function Home() {
-  return (
-    <div className="flex flex-col">
-      <Navbar />
-      {/* <Hero /> */}
-      <CalendarApp projectId=""/>
-      {/* <Footer /> */}
-    </div>
-  );
+export default function CalendarPage({ params }: PageProps) {
+  // Unwrap the params Promise using React.use()
+  const { projectId } = use(params)
+  
+  return (<>
+    {/* <CalendarApp projectId={projectId} /> */}
+    <Navbar/>
+    <Hero/>
+    </>
+  )
 }

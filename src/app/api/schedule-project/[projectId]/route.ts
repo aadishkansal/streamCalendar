@@ -36,7 +36,6 @@ export async function GET(
 
         // Try to find the project without user_id first to see if it exists
         const projectExists = await Project.findById(projectId);
-        console.log("Project exists (without user filter):", projectExists);
 
         // Find project and verify ownership
         const project = await Project.findOne({

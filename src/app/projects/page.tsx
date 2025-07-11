@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
+import MainNavbar from '../components/MainNavBar';
+import Sidebbar from '../components/Sidebbar';
 
 interface Project {
   _id: string;
@@ -55,11 +57,14 @@ const Projects = () => {
 
   // Main projects list view
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className='flex justify-center'>
+        <MainNavbar/>
+    <div className="flex justify-items-center h-[684px] mt-20 gap-2">
+        <Sidebbar/>
+      <div className="max-w-7xl  mx-auto px-4 py-6 shadow-xl rounded-xl bg-white ">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Projects</h1>
-          <p className="text-gray-600">Manage and track your learning projects</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">My Projects</h1>
+          <p className="text-gray-600 font-medium ">Manage and track your learning projects</p>
         </div>
 
         {projects.length === 0 ? (
@@ -74,11 +79,11 @@ const Projects = () => {
               <div
                 key={project._id}
                 onClick={() => handleProjectClick(project._id)}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
+                className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                       {project.title}
                     </h3>
                     <div className="flex-shrink-0 ml-2">
@@ -109,7 +114,7 @@ const Projects = () => {
                     }`}>
                       {project.completed ? 'Completed' : 'In Progress'}
                     </span>
-                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
+                    <button className="text-[#5d57ee] hover:text-[#353188] text-sm font-medium transition-colors">
                       View Calendar →
                     </button>
                   </div>
@@ -119,6 +124,7 @@ const Projects = () => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

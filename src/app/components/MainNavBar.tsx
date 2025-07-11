@@ -42,11 +42,11 @@ const MainNavbar = () => {
   }, []);
 
   return (
-    <nav className=" flex justify-between place-items-center bg-slate-50 drop-shadow-xl rounded-xl  gap-44 fixed max-container p-4  py-1 mr-24 ml-24 mt-2 z-10">
-      <div>
+    <nav className="flex justify-between items-center bg-slate-50 drop-shadow-xl rounded-xl fixed max-container p-4 py-1 mr-24 ml-24 mt-2 z-10">
+      {/* Left section - Logo */}
+      <div className="flex-shrink-0">
         <Link href="/">
-          <div className="items-center flex ">
-            {" "}
+          <div className="items-center flex">
             <Image
               className=""
               src="/streamlogo.svg"
@@ -64,7 +64,9 @@ const MainNavbar = () => {
           </div>
         </Link>
       </div>
-      <div className="flex justify-center flex-1">
+
+      {/* Center section - Navigation Links */}
+      <div className="flex justify-center flex-1 px-24">
         <ul className="hidden h-full gap-8 lg:flex items-center text-[16px] mt-2">
           {navigationLink.map((link) => (
             <Link
@@ -77,7 +79,9 @@ const MainNavbar = () => {
           ))}
         </ul>
       </div>
-      <div className="flex justify-end items-center gap-6">
+
+      {/* Right section - Credit & User */}
+      <div className="flex justify-end items-center gap-6 flex-shrink-0">
         <div className="flex items-center gap-4 whitespace-nowrap font-medium text-base">
           Credit: {credit} left
           <Button

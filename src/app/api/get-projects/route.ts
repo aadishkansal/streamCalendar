@@ -20,10 +20,18 @@ export async function GET(req: Request){
 
         const projects = await Project.find(
             { _id: { $in: user.projectIds } }, 
-          ).select("_id title dateStart dateEnd completed");
+        ).select("_id title start_date end_date completed").lean(); // Add .lean() here
+
+        const transformedProjects = projects.map(project => ({
+            _id: project._id.toString(), // Convert ObjectId to string
+            title: project.title,
+            dateStart: project.start_date.toISOString(), // Convert Date to ISO string
+            dateEnd: project.end_date.toISOString(), // Convert Date to ISO string
+            completed: project.completed
+        }));
 
         return Response.json(
-            { success: true, message: "Fetched projects", projects: projects},
+            { success: true, message: "Fetched projects", projects: transformedProjects},
             { status: 200 }
         );
         

@@ -7,7 +7,6 @@ export async function POST(req: Request){
     await dbConnect();
 
     try {
-
         const session = await getServerSession(authOptions);
         const user: User = session?.user as User;
 
@@ -30,7 +29,7 @@ export async function POST(req: Request){
         }
 
         if(project.streak && project.streak.length > index){
-            project.streak[index] = true;
+            project.streak[index] = false;
             project.save();
             return new Response(    
                 JSON.stringify({ success: true, message: "Succesfully updated value" }),
