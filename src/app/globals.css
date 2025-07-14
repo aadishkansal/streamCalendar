@@ -5,7 +5,8 @@
 @tailwind utilities;
 @layer utilities{
 .btn_purple {
-    @apply bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white w-[101px] h-[41px] 
+    @apply bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white w-[101px] h-[41px] hover:cursor-pointer transition-all duration-300 ease-in-out hover:from-[#353188] hover:to-[#5d57ee] hover:shadow-lg border-none outline-none;
+  }
 }
 .btn_big1 {
     @apply bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white w-[420px] h-[64px] max-md:w-[300px] 
@@ -15,10 +16,189 @@
     @apply font-['Inter'] text-black w-[420px] h-[64px] max-md:w-[200px] border border-[#00000080] 
            transition-all duration-300 ease-in-out hover:bg-black hover:text-white hover:border-black;
 }
-}
+
+/* Base calendar wrapper styling */
 .sx-calendar-container .sx-react-calendar-wrapper {
-  width: 1080px;
-  height: 684px;
   box-shadow: 2px 2px 11px 2px rgba(124,124,124,0.53);
   border-radius: 12px;
+  /* Default size - will be overridden by specific views */
+  width: 1080px;
+  height: 684px;
+}
+
+/* Hide the built-in view switcher dropdown in the header */
+/* Hide the built-in view-switcher dropdown in Schedule‑X header */
+/* Remove all dropdowns inside the calendar header */
+
+/* Target the actual calendar element inside */
+.sx-calendar-container .sx-calendar {
+  width: 100%;
+  height: 100%;
+}
+
+/* Day View - using different selector */
+.sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-day),
+.sx-calendar-container .sx-react-calendar-wrapper .sx-view-day {
+  width: 800px;
+  height: 600px;
+}
+
+/* Week View - using different selector */
+.sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-week),
+.sx-calendar-container .sx-react-calendar-wrapper .sx-view-week {
+  width: 1080px;
+  height: 684px;
+}
+
+/* Month View - using different selector */
+.sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-month-grid),
+.sx-calendar-container .sx-react-calendar-wrapper .sx-view-month-grid {
+  width: 900px;
+  height: 650px;
+}
+
+/* Mobile - up to 767px - ONLY DAY VIEW */
+@media (max-width: 767px) {
+  .sx-calendar-container .sx-react-calendar-wrapper {
+    width: 95vw !important;
+    height: 90vh !important;
+    max-width: 400px;
+  }
+  
+  /* Only day view should be visible on mobile */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-day),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-day {
+    width: 95vw !important;
+    height: 90vh !important;
+    max-width: 400px;
+    display: block !important;
+  }
+}
+
+/* Tablet devices (768px to 991px) - DAY, WEEK, MONTH ALL VISIBLE */
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .sx-calendar-container .sx-react-calendar-wrapper {
+    width: 720px;
+    height: 90vh !important;
+  }
+  
+  /* Day View - Tablet */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-day),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-day {
+    width: 650px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Week View - Tablet - VISIBLE */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-week),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-week {
+    width: 720px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Month View - Tablet - VISIBLE */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-month-grid),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-month-grid {
+    width: 700px;
+    height: 90vh !important;
+    display: block !important;
+  }
+}
+
+/* Desktop devices (992px and up) - ALL VIEWS VISIBLE */
+@media only screen and (min-width: 992px) {
+  .sx-calendar-container .sx-react-calendar-wrapper {
+    width: 950px;
+    height: 90vh !important;
+  }
+  
+  /* Day View - Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-day),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-day {
+    width: 800px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Week View - Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-week),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-week {
+    width: 950px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Month View - Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-month-grid),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-month-grid {
+    width: 900px;
+    height: 90vh !important;
+    display: block !important;
+  }
+}
+
+/* Large devices (laptops/desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+  .sx-calendar-container .sx-react-calendar-wrapper {
+    width: 1080px;
+    height: 90vh !important;
+  }
+  
+  /* Day View - Large Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-day),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-day {
+    width: 900px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Week View - Large Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-week),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-week {
+    width: 1080px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Month View - Large Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-month-grid),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-month-grid {
+    width: 1000px;
+    height: 90vh !important;
+    display: block !important;
+  }
+}
+
+/* Extra Large devices (large desktops, 1400px and up) */
+@media only screen and (min-width: 1400px) {
+  .sx-calendar-container .sx-react-calendar-wrapper {
+    width: 1200px;
+    height: 90vh !important;
+  }
+  
+  /* Day View - Extra Large Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-day),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-day {
+    width: 1000px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Week View - Extra Large Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-week),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-week {
+    width: 1200px;
+    height: 90vh !important;
+    display: block !important;
+  }
+  
+  /* Month View - Extra Large Desktop */
+  .sx-calendar-container .sx-react-calendar-wrapper:has(.sx-view-month-grid),
+  .sx-calendar-container .sx-react-calendar-wrapper .sx-view-month-grid {
+    width: 1150px;
+    height: 90vh !important;
+    display: block !important;
+  }
 }

@@ -4,7 +4,7 @@ import "../globals.css"; // Import from src/
 
 
 export const metadata: Metadata = {
-  title: "StreamCalandar",
+  title: "StreamCalendar",
   description: "Schedule your youtube playlist",
 };
 

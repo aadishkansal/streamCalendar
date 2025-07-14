@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Button from "@/app/components/ui/Button";
+import Navbar from "@/app/components/Navbar";
 
 export default function ForgetPassword() {
   const [email, setEmail] = useState("");
@@ -72,9 +73,10 @@ export default function ForgetPassword() {
     }
   };
 
-  return (
+  return (<>
+  <Navbar/>
     <section className="flex justify-between ">
-      <div className=" hidden lg:flex bg-[#5D57EE80] h-screen w-[500px]"></div>
+      <div className=" hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 h-screen w-[500px]"></div>
 
       <div className="flex flex-col justify-center items-center w-full gap-6 h-screen">
         <h1 className="font-['inter'] text-[24px] font-bold max-md:text-[20px]">
@@ -126,6 +128,7 @@ export default function ForgetPassword() {
             type="button"
             variant="btn_big1"
             onClick={handleSendOtp}
+            disabled={!email.trim()}
           />
         ) : isOtpExpired ? (
           <Button
@@ -140,7 +143,7 @@ export default function ForgetPassword() {
             type="button"
             variant="btn_big2"
             onClick={handleVerifyOtp}
-            //disabled={isVerifying}
+            disabled={!email.trim()}
           />
         )}
 
@@ -152,6 +155,6 @@ export default function ForgetPassword() {
           </a>
         </h6>
       </div>
-    </section>
+    </section></>
   );
 }

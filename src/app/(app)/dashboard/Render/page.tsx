@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
 import { YplaylistType } from "@/schemas/Yplaylist";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 type RenderProps = {
   data: YplaylistType;
@@ -29,6 +30,8 @@ const Render: React.FC<RenderProps> = ({ data }) => {
     { short: "F", full: "Friday" },
     { short: "S", full: "Saturday" },
   ];
+
+  const router = useRouter();
 
   useEffect(() => {
     if (data?.playlistId) {
@@ -81,7 +84,7 @@ const Render: React.FC<RenderProps> = ({ data }) => {
         start_date: new Date(formData.start_date),
         end_date: new Date(formData.end_date),
       });
-
+      router.push("/projects");
       console.log("✅ Success:", response.data);
     } catch (err) {
       console.error("❌ API Error:", err);

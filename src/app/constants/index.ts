@@ -10,8 +10,7 @@ export const navLinks =[
 // navigation links after signed in 
 export const navigationLink =[
     { href:"/" , key:"home" , label:"Home"},
-    { href:"/My schedule" , key:"schedule" , label:"My schedule"},
-    { href:"/plans" , key:"plans" , label:"Pricing"},
     { href:"/projects" , key:"plans" , label:"Projects"},
+    { href:"/plans" , key:"plans" , label:"Pricing"},
     { href:"/support" , key:"support" , label:"Support"},
 ]

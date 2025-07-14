@@ -10,11 +10,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Button from "@/app/components/ui/Button";
 import Link from "next/link";
+import { Eye,EyeOff } from "lucide-react";
+
 import { debounce } from "lodash";
+import Navbar from "@/app/components/Navbar";
 
 const SignUpPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [checkBox, setCheckBox] = useState(false);
+ const [showPassword, setShowPassword] = useState<boolean>(false);
+
     const [username, setUsername] = useState("");
     const [usernameAvailable, setUsernameAvailable] = useState<null | boolean>(null);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
@@ -76,7 +81,8 @@ const SignUpPage = () => {
         }
     };
 
-    return (
+    return (<>
+        <Navbar/>
         <section className="flex justify-between">
             {/* Left Side */}
             <div className="hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 backdrop-blur-4xl brightness-120 h-screen w-[500px]"></div>
@@ -142,14 +148,23 @@ const SignUpPage = () => {
 
                     {/* Password */}
                     <div>
-                        <h6 className="font-['Inter'] text-[16px] font-semibold">Password</h6>
-                        <input
-                            type="password"
-                            className="border border-[#5D57EE80] rounded-xl w-[540px] h-12 p-4 max-md:w-[360px]"
-                            {...register("password")}
-                        />
-                        {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
-                    </div>
+  <h6 className="font-['Inter'] text-[16px] font-semibold">Password</h6>
+  <div className="relative">
+    <input
+      type={showPassword ? "text" : "password"}
+      className="border border-[#5D57EE80] rounded-xl w-[540px] h-12 p-4 pr-12 max-md:w-[360px]"
+      {...register("password")}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+    >
+      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    </button>
+  </div>
+  {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+</div>
 
                     {/* Terms & Conditions Checkbox */}
                     <div className="flex gap-2 mt-3">
@@ -170,7 +185,7 @@ const SignUpPage = () => {
                         title="Sign up"
                         variant="btn_big1"
                         onClick={() => {}}
-                        //disabled={!checkBox || isSubmitting || usernameAvailable === false || isCheckingUsername} // Prevent submission if username is taken or still checking
+                        disabled={!checkBox || isSubmitting || usernameAvailable === false || isCheckingUsername} // Prevent submission if username is taken or still checking
                     />
                 </form>
 
@@ -178,7 +193,7 @@ const SignUpPage = () => {
                     Already have an account? <Link href="/sign-in">Sign In</Link>
                 </h6>
             </div>
-        </section>
+        </section></>
     );
 };
 

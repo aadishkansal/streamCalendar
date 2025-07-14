@@ -9,12 +9,12 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <MainNavbar/>
+    <div className="flex">
+      {/* <MainNavbar/> */}
       <main className="flex-1">
         {children}
       </main>
-      <Footer/>
+      {/* <Footer/> */}
     </div>
   )
 }
