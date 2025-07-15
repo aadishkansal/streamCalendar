@@ -163,13 +163,16 @@ const CalendarApp: React.FC<CalendarAppProps> = ({ projectId }) => {
           <strong>Video ${videoIndex + 1} of ${totalVideos}</strong>
         </div>
         <div class="mb-2">
-          <button
-            onclick="window.open('${video.url}', '_blank', 'noopener,noreferrer')"
-            id="${linkId}"
-            class="text-blue-600 font-medium border border-blue-600 px-3 py-1 mt-2 rounded-md hover:underline hover:bg-blue-50 transition"
-          >
-            Watch Video
-          </button>
+<h3 class="text-sm font-semibold text-gray-800 mb-2 line-clamp-2 overflow-hidden text-ellipsis">${video.title || 'Untitled Video'}</h3>
+  <button
+  onclick="window.open('${video.url}', '_blank', 'noopener,noreferrer')"
+  id="${linkId}"
+  class=" hover:underline hover:bg-purple-600 transition"
+  style="border: 2px solid #2563eb;background-color: #5d57ee; color:white;padding:2px; -webkit-box-shadow: 1px 2px 8px 0px rgba(0,0,0,0.52); 
+box-shadow: 1px 2px 8px 0px rgba(0,0,0,0.52);border-radius:8px;hover:color:white;"
+>
+  Watch Video
+</button>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <input 
@@ -177,7 +180,7 @@ const CalendarApp: React.FC<CalendarAppProps> = ({ projectId }) => {
             id="${checkboxId}"
             ${isCompleted ? 'checked' : ''}
             onchange="handleVideoCompletion('${videoIndex}', this.checked)"
-            style="width: 16px; height: 16px; cursor: pointer; accent-color: #1976d2;"
+            style="width: 16px; height: 16px; cursor: pointer; accent-color:  #5d57ee;"
           />
           <label 
             for="${checkboxId}" 
@@ -594,7 +597,7 @@ const CalendarApp: React.FC<CalendarAppProps> = ({ projectId }) => {
                 }
                 
                 .today-btn {
-                  background: #007bff;
+                  background:  #5d57ee;
                   color: white;
                   border: 1px solid #007bff;
                   border-radius: 6px;
@@ -606,7 +609,7 @@ const CalendarApp: React.FC<CalendarAppProps> = ({ projectId }) => {
                 }
                 
                 .today-btn:hover {
-                  background: #0056b3;
+                  background: #353188;
                   border-color: #0056b3;
                 }
                 
