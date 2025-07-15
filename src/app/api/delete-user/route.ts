@@ -2,6 +2,7 @@ import dbConnect from "@/lib/dbConnect";
 import { getServerSession, User } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import UserModel from "@/model/User";
+import Project from "@/model/Project"; 
 import bcrypt from "bcryptjs";
 
 export async function DELETE(req: Request) {
@@ -62,6 +63,9 @@ export async function DELETE(req: Request) {
         { status: 401 }
       );
     }
+
+    // Delete all related projects first
+    await Project.deleteMany({ user_id: user._id });
 
     // Delete the user
     await UserModel.findByIdAndDelete(user._id);

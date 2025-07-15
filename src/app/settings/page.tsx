@@ -20,6 +20,7 @@ import Footer from "../components/Footer";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
 
 const invoices = [
   {
@@ -67,6 +68,7 @@ const Setting = () => {
       marketing: true,
     }
   });
+  const router = useRouter();
 
   const settingsItems = [
     {
@@ -112,6 +114,10 @@ const Setting = () => {
       }
     }));
   };
+
+  const deleteAccount = () => {
+    router.push("delete-acc");
+  }
 
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -173,7 +179,7 @@ const Setting = () => {
 
       <div className="p-4 sm:p-6 rounded-xl bg-white shadow-2xl border border-red-200">
         <p className="text-red-600 font-medium mb-4">Once you delete your account, there is no going back. Please be certain.</p>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors">
+        <button onClick={deleteAccount} className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors">
           <Trash2 size={16} />
           <span>Delete Account</span>
         </button>
