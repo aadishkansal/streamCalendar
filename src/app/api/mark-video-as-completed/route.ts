@@ -5,7 +5,6 @@ import Project from "@/model/Project";
 
 export async function POST(req: Request){
     await dbConnect();
-
     try {
 
         const session = await getServerSession(authOptions);
@@ -19,8 +18,13 @@ export async function POST(req: Request){
         }
 
         const { index, projectId } = await req.json();
+        
+        console.log(projectId);
 
-        const project = await Project.findById(projectId);
+        const project = await Project.findOne({
+            _id: projectId,
+            user_id: user._id  
+        });
 
         if(!project){
             return new Response(
@@ -40,7 +44,7 @@ export async function POST(req: Request){
 
         return new Response(
             JSON.stringify({ success: false, message: "Unknown error" }),
-            { status: 401 }
+            { status: 404 }
         );
 
     } catch (error) {

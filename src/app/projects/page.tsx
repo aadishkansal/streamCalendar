@@ -1,10 +1,11 @@
 "use client"
 
+// add a check, because the front-end is rendering when the values are not yet available
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import MainNavbar from '../components/MainNavBar';
-import Sidebbar from '../components/Sidebbar';
 
 interface Project {
   _id: string;
@@ -29,7 +30,6 @@ const Projects = () => {
       setLoading(true);
       const response = await fetch('/api/get-projects');
       const data = await response.json();
-
       if (data.success) {
         setProjects(data.projects);
       } else {

@@ -53,7 +53,7 @@ export async function GET(
         const playlistId = project.playlistId;
 
         // Query by playlistId field (YouTube playlist ID) not by MongoDB _id
-        const playlistVids = await Playlist.findOne({ playlistId: playlistId }).select("videos");
+        const playlistVids = await Playlist.findOne({ playlistId }).select("videos");
         return Response.json(
             { success: true, message: "Generated details", project: project, videos: playlistVids},
             { status: 200 }
