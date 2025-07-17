@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import MainNavbar from '../components/MainNavBar';
+import axios from 'axios';
 
 interface Project {
   _id: string;
@@ -28,8 +29,8 @@ const Projects = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/get-projects');
-      const data = await response.json();
+      const response = await axios.get('/api/get-projects');
+      const data = response.data;
       if (data.success) {
         setProjects(data.projects);
       } else {
