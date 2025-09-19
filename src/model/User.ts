@@ -5,10 +5,12 @@ export interface IUser extends Document {
   name: string;
   username: string;
   email: string;
-  password: string;
+  password?: string;
   projectIds: Types.ObjectId[];
   forgotPassCode?: string;
   forgotPassCodeExpiry?: Date;
+  provider?: string; 
+  providerId?: string; 
 }
 
 const UserSchema: Schema<IUser> = new mongoose.Schema(
@@ -16,7 +18,7 @@ const UserSchema: Schema<IUser> = new mongoose.Schema(
     name: { type: String, required: true },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     projectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Project" }],
     forgotPassCode: {
       type: String,
@@ -24,6 +26,8 @@ const UserSchema: Schema<IUser> = new mongoose.Schema(
     forgotPassCodeExpiry: {
       type: Date,
     },
+    provider: { type: String },
+    providerId: { type: String },
   },
   { timestamps: true }
 );

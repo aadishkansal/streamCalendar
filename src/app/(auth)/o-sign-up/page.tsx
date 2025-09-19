@@ -2,6 +2,7 @@
 import Button from "@/app/components/ui/Button";
 import googleIcon1 from "../../../asset/googleIcon1.svg";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function oSignUp() {
@@ -24,7 +25,7 @@ export default function oSignUp() {
             title="Sign up with Google"
             variant="btn_big1"
             icon={googleIcon1}
-            onClick={onSubmit}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
           />
           <h2>---------- or ----------</h2>
           <Button

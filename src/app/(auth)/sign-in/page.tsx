@@ -71,7 +71,7 @@ export default function SignInForm() {
             title="Sign in with Google"
             variant="btn_big1"
             icon={googleIcon1}
-            onClick={() => {}}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
           />
 
           <h2 className="-mt-6 -mb-8">---------- or ----------</h2>
