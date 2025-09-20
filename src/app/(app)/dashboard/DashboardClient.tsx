@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import axios, { AxiosError } from "axios";
 import { ApiResponse } from "@/types/ApiResponse";
 import { YplaylistType } from "@/schemas/Yplaylist";
-import Render from "./Render/page";
+import Render from "./Render/render";
 import { useSession } from "next-auth/react";
 
 import MainNavbar from "@/app/components/MainNavBar";
