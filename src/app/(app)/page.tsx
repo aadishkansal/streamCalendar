@@ -3,9 +3,11 @@
 import { use } from 'react'
 import CalendarApp from '../components/CalendarApp'
 import Navbar from '../components/Navbar'
-import Hero from '../components/Hero'
+import Hero, { BackgroundBeamsWithCollisionDemo } from '../components/Hero'
 import PricingSectionCards from '../plans/page'
 import Footer from '../components/Footer'
+import { FeaturesSectionDemo } from '../components/Features'
+
 interface PageProps {
   params: Promise<{
     projectId: string
@@ -20,7 +22,8 @@ export default function CalendarPage({ params }: PageProps) {
   return (<>
     {/* <CalendarApp projectId={projectId} /> */}
     <Navbar/>
-    <Hero/>
+<BackgroundBeamsWithCollisionDemo/>
+    <FeaturesSectionDemo/>
     <PricingSectionCards/>
     </>
   )

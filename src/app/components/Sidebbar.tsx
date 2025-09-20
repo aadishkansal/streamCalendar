@@ -1,57 +1,129 @@
-import React from 'react'
-import Streaks from './Streaks'
-// from-[#5d57ee] to-[#5652b3] 
-import { usePathname } from 'next/navigation'
-import { CalendarIcon, HelpCircleIcon, HomeIcon, NewspaperIcon, SettingsIcon } from 'lucide-react'
+import React, { useState } from 'react';
+import Streaks from './Streaks';
+import { Sidebar ,SidebarBody,SidebarLink } from '@/components/ui/sidebar';
+import {
+  IconArrowLeft,
+  IconBrandTabler,
+  IconSettings,
+  IconUserBolt,
+  IconCalendar,
+  IconHome
+} from '@tabler/icons-react';
+import { motion } from 'motion/react';
+
 interface SidebarProps {
   completionMap: Map<string, boolean>
 }
-const Sidebbar = (data: SidebarProps) => {
-  const pathname = usePathname();
+
+export const Logo = () => {
   return (
-    <div className="h-[684px] w-72 p-2 mr-auto flex flex-col bg-gradient-to-r from-[#5d57ee]/90 to-[#353188]/90 shadow-lg rounded-xl">
-  <div className="mt-3  bg-white/5 backdrop-blur-md rounded-xl p-2 flex flex-col gap-3">
-  <div className="text-white font-['Inter'] font-semibold text-sm">
-  <a href='/' className="flex gap-2 items-center"> 
-    <HomeIcon/>
-    <span>Home</span>
+    <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black">
+      <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
+      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-medium whitespace-pre text-black dark:text-white">
+        StreamCalendar
+      </motion.span>
+    </a>
+  );
+};
+
+export const LogoIcon = () => (
+  <a href="#" className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black">
+    <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
   </a>
-</div>
+);
 
-<div className="text-white font-['Inter'] font-semibold text-sm">
-<a href={pathname && pathname.startsWith('/calendar/') ? pathname : '/calendar/'} className="flex gap-2 items-center">  
-    <CalendarIcon/>
-    <span>My Schedule</span>
-  </a>
-</div>
+const links = [
+  {
+    label: 'Home',
+    href: '/',
+    icon: <IconHome className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+  },
+  {
+    label: 'My Schedule',
+    href: '/calendar/',
+    icon: <IconCalendar className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+  },
+  {
+    label: 'Projects',
+    href: '/projects',
+    icon: <IconBrandTabler className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+  },
+  {
+    label: 'Settings',
+    href: '/settings',
+    icon: <IconSettings className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+  },
+  {
+    label: 'Help & Support',
+    href: '/support',
+    icon: <IconUserBolt className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+  },
+  {
+    label: 'Logout',
+    href: '#',
+    icon: <IconArrowLeft className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+  }
+];
 
-<div className="text-white font-['Inter'] font-semibold text-sm">
-  <a href='/projects' className="flex gap-2 items-center"> 
-    <NewspaperIcon/>
-    <span>Projects</span>
-  </a>
-</div>
-    
-  </div>
-
-           
-        <div className='mt-3  bg-white/5 backdrop-blur-md rounded-xl p-2  '>
-          <Streaks completionMap={data.completionMap}  />
-        </div>
-
-        <div className=" mt-auto  bg-white/5 backdrop-blur-md rounded-xl flex flex-col gap-3 px-2 py-2 mb-3 ">
-          <div className="text-white font-['inter'] font-semibold flex text-sm gap-4 items-center">
-<HelpCircleIcon/>
-         <a href='/support'> <span>Help & Support</span> </a>
-          </div >
-          <div className="text-white font-['inter'] font-semibold flex text-sm gap-3 items-center">
-<SettingsIcon/>
-         <a href='/settings'> <span>Settings</span> </a>
-          
-          </div>
-        </div>
+const Dashboard = () => (
+  <div className="flex flex-1">
+    <div className="flex h-full w-full flex-1 flex-col gap-2 rounded-tl-2xl border border-neutral-200 bg-white p-2 md:p-10 dark:border-neutral-700 dark:bg-neutral-900">
+      {/* Placeholder area for your dashboard content */}
+      <div className="flex gap-2">
+        {[...new Array(4)].map((_, idx) => (
+          <div key={idx} className="h-20 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-neutral-800"></div>
+        ))}
+      </div>
+      <div className="flex flex-1 gap-2">
+        {[...new Array(2)].map((_, idx) => (
+          <div key={idx} className="h-full w-full animate-pulse rounded-lg bg-gray-100 dark:bg-neutral-800"></div>
+        ))}
+      </div>
     </div>
-  )
-}
+  </div>
+);
 
-export default Sidebbar
+const Sidebbar: React.FC<SidebarProps> = ({ completionMap }) => {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col overflow-hidden rounded-md border border-neutral-200 bg-gray-100 md:flex-row dark:border-neutral-700 dark:bg-neutral-800 h-screen">
+      <Sidebar open={open} setOpen={setOpen}>
+        <SidebarBody className="justify-between gap-10">
+          <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
+            {open ? <Logo /> : <LogoIcon />}
+            <div className="mt-8 flex flex-col gap-2">
+              {links.map((link, idx) => (
+                <SidebarLink key={idx} link={link} />
+              ))}
+            </div>
+            {/* Optionally include Streaks component below your links */}
+            <div className="mt-4">
+              <Streaks completionMap={completionMap} />
+            </div>
+          </div>
+          <div>
+            <SidebarLink
+              link={{
+                label: 'Stream User',
+                href: '#',
+                icon: (
+                  <img
+                    src="https://assets.aceternity.com/manu.png"
+                    className="h-7 w-7 shrink-0 rounded-full"
+                    width={50}
+                    height={50}
+                    alt="Avatar"
+                  />
+                ),
+              }}
+            />
+          </div>
+        </SidebarBody>
+      </Sidebar>
+      <Dashboard />
+    </div>
+  );
+};
+
+export default Sidebbar;
