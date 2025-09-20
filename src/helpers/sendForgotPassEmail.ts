@@ -1,22 +1,37 @@
-import { resend } from "@/lib/resend";
-import ForgotPassEmail from "../../emails/forgotPassEmail";
-import { ApiResponse } from "@/types/ApiResponse";
+import { Resend } from 'resend';
+import { ApiResponse } from '@/types/ApiResponse';
+import forgotPassEmail from '../../emails/forgotPassEmail';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendForgotPassEmail(
-  forgotPassEmail: string,
-  forgotPassUsername: string,
-  forgotPassCode: string
+  email: string,
+  username: string,
+  otp: string
 ): Promise<ApiResponse> {
+  console.log("sendForgotPassEmail called with:", { email, username, otp });
+  console.log("API Key exists:", !!process.env.RESEND_API_KEY);
+  
   try {
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: forgotPassEmail,
-      subject: "Password reset Code",
-      react: ForgotPassEmail({ username: forgotPassUsername, otp: forgotPassCode }),
+    const { data, error } = await resend.emails.send({
+      from: 'onboarding@resend.dev', // Using Resend's test domain
+      to: 'aniketsahu0307@gmail.com', // For testing, using a hardcoded email
+      // to: [email], // Will be used in production
+      subject: 'CampusHire - Password Reset Code',
+      react: forgotPassEmail({ username, otp }),
     });
-    return { success: true, message: "Forgot password email sent successfully." };
+
+    console.log("Resend response - data:", data);
+    console.log("Resend response - error:", error);
+
+    if (error) {
+      console.error('Resend API error:', error);
+      return { success: false, message: error.message || 'Failed to send email' };
+    }
+
+    return { success: true, message: 'Email sent successfully' };
   } catch (emailError) {
-    console.error("Error sending forgot password email:", emailError);
-    return { success: false, message: "Failed to send forgot password email." };
+    console.error('Exception in sendForgotPassEmail:', emailError);
+    return { success: false, message: 'Failed to send email' };
   }
 }
