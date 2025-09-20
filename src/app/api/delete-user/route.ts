@@ -19,29 +19,29 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const { password, confirmPassword } = await req.json();
+    // const { password, confirmPassword } = await req.json();
 
-    // Validate required fields
-    if (!password || !confirmPassword) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Password and confirm password are required" 
-        }),
-        { status: 400 }
-      );
-    }
+    // // Validate required fields
+    // if (!password || !confirmPassword) {
+    //   return new Response(
+    //     JSON.stringify({ 
+    //       success: false, 
+    //       message: "Password and confirm password are required" 
+    //     }),
+    //     { status: 400 }
+    //   );
+    // }
 
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Passwords do not match" 
-        }),
-        { status: 400 }
-      );
-    }
+    // // Check if passwords match
+    // if (password !== confirmPassword) {
+    //   return new Response(
+    //     JSON.stringify({ 
+    //       success: false, 
+    //       message: "Passwords do not match" 
+    //     }),
+    //     { status: 400 }
+    //   );
+    // }
 
     // Find the user in database
     const dbUser = await UserModel.findById(user._id);
@@ -53,16 +53,16 @@ export async function DELETE(req: Request) {
     }
 
     // Verify the password
-    const isPasswordValid = await bcrypt.compare(password, dbUser.password);
-    if (!isPasswordValid) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Invalid password" 
-        }),
-        { status: 401 }
-      );
-    }
+    // const isPasswordValid = await bcrypt.compare(password, dbUser.password);
+    // if (!isPasswordValid) {
+    //   return new Response(
+    //     JSON.stringify({ 
+    //       success: false, 
+    //       message: "Invalid password" 
+    //     }),
+    //     { status: 401 }
+    //   );
+    // }
 
     // Delete all related projects first
     await Project.deleteMany({ user_id: user._id });
