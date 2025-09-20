@@ -1,6 +1,6 @@
 // src/app/newPassword/page.tsx
 import VerifyOtp from "./VerifyOtp";
 
-export default async function Page({ searchParams }: { searchParams: { email?: string } }) {
+export default function Page({ searchParams }: { searchParams: { email?: string } }) {
   return <VerifyOtp email={searchParams.email ?? ""} />;
 }
