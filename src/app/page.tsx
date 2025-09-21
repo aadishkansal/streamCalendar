@@ -9,6 +9,6 @@ export default async function RootPage() {
   }
   
   // Import your existing home page component
-  const HomePage = await import('./(app)/page')
+  const HomePage = await import('./(main)/page')
   return <HomePage.default params={Promise.resolve({ projectId: '' })} />
 }
