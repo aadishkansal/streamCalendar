@@ -20,9 +20,19 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "next",
+      "lodash",
+      "prop-types",
+      "bcryptjs",
+      "react-day-picker",
+      "warning"
+    ]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
-  
 }

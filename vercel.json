@@ -1,0 +1,10 @@
+{
+  "buildCommand": "next build",
+  "framework": "nextjs",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "regions": ["iad1"]
+}

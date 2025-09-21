@@ -4,46 +4,47 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { navigationLink } from "../constants";
 import Button from "./ui/Button";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { signOut } from "next-auth/react";
-
 import { useSession } from "next-auth/react";
-import { FlameIcon, Settings, User2Icon, X } from "lucide-react";
+import { FlameIcon, Settings, User2Icon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
-const MainNavbar = () => {
+function MainNavbarInner() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
-  
+
   // Check if current page is the specific calendar route
-  const isCalendarPage = pathname.startsWith('/calendar');  
+  const isCalendarPage = pathname.startsWith("/calendar");
   const onSubmit = async () => {
     router.push("/plans");
   };
-  
+
   const onSettings = async () => {
     router.push("/settings");
-  }
+  };
 
   const [credit, setCredit] = useState<number>(0);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const calendarRef = useRef(null);
-const userDropdownRef = useRef(null);
+  const userDropdownRef = useRef(null);
+
   const handleLogout = async () => {
     await signOut();
     window.location.href = "/";
   };
-  
+
   useEffect(() => {
     if (session?.user?.projectIds) {
       const used = session.user.projectIds.length;
       setCredit(2 - used);
     }
   }, [session]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -58,7 +59,7 @@ const userDropdownRef = useRef(null);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -86,7 +87,7 @@ const userDropdownRef = useRef(null);
   // Close mobile menu when pressing Escape key
   useEffect(() => {
     const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMobileMenuOpen) {
+      if (e.key === "Escape" && isMobileMenuOpen) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -97,14 +98,18 @@ const userDropdownRef = useRef(null);
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutsideMenu = (e: MouseEvent) => {
-      if (isMobileMenuOpen && !(e.target as HTMLElement).closest('.mobile-menu-overlay')) {
+      if (
+        isMobileMenuOpen &&
+        !(e.target as HTMLElement).closest(".mobile-menu-overlay")
+      ) {
         setIsMobileMenuOpen(false);
       }
     };
     if (isMobileMenuOpen) {
       document.addEventListener("mousedown", handleClickOutsideMenu);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutsideMenu);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutsideMenu);
   }, [isMobileMenuOpen]);
 
   return (
@@ -153,12 +158,12 @@ const userDropdownRef = useRef(null);
               />
               {/* Mobile logo text */}
               <Image
-                            className="ml-1 sm:hidden"
-                            src="/StreamCalendar.svg"
-                            alt="streamcalendar"
-                            width={100}
-                            height={20}
-                          />
+                className="ml-1 sm:hidden"
+                src="/StreamCalendar.svg"
+                alt="streamcalendar"
+                width={100}
+                height={20}
+              />
             </div>
           </Link>
         </div>
@@ -180,7 +185,7 @@ const userDropdownRef = useRef(null);
           )}
         </div>
 
-        {/* Right section - Credit & User (Desktop) / User only (Mobile) */}
+        {/* Right section - Credit & User */}
         <div className="flex justify-end items-center gap-6 flex-shrink-0">
           {/* Credit section - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-4 whitespace-nowrap font-medium text-base">
@@ -195,36 +200,42 @@ const userDropdownRef = useRef(null);
             />
           </div>
 
-<div className="lg:hidden relative inline-flex flex-row items-center" ref={calendarRef}>
+          {/* Calendar dropdown (mobile only) */}
+          <div
+            className="lg:hidden relative inline-flex flex-row items-center"
+            ref={calendarRef}
+          >
+            <FlameIcon
+              className="w-6 h-6"
+              onClick={() => setIsCalendarOpen((prev) => !prev)}
+              style={{
+                stroke: "url(#halfOrangeGradient)",
+              }}
+            />
 
-  <FlameIcon
-    className="w-6 h-6"
-    onClick={() => setIsCalendarOpen((prev) => !prev)}
-    style={{
-      stroke: 'url(#halfOrangeGradient)',
-    }}
-  />
+            {/* SVG gradient definition */}
+            <svg width="0" height="0">
+              <defs>
+                <linearGradient
+                  id="halfOrangeGradient"
+                  x1="0"
+                  x2="0"
+                  y1="0"
+                  y2="1"
+                >
+                  <stop offset="50%" stopColor="#c86300" />
+                  <stop offset="50%" stopColor="#f97316" />
+                </linearGradient>
+              </defs>
+            </svg>
 
-  {/* SVG gradient definition (invisible container) */}
-  <svg width="0" height="0">
-    <defs>
-      <linearGradient id="halfOrangeGradient" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="50%" stopColor="#c86300" />
-        <stop offset="50%" stopColor="#f97316" />
-      </linearGradient>
-    </defs>
-  </svg>
-
-
-  <span className="text-base font-semibold text-gray-700 mt-1">3</span>
-  {isCalendarOpen && (
-    <div className="absolute right-0 mt-96 w-60 bg-white rounded-xl font-semibold shadow-lg z-10 transition-all duration-300">
-     <Calendar className="w-full h-full" 
-     showOutsideDays={false}/>
-    </div>)}
-
-
-</div>
+            <span className="text-base font-semibold text-gray-700 mt-1">3</span>
+            {isCalendarOpen && (
+              <div className="absolute right-0 mt-96 w-60 bg-white rounded-xl font-semibold shadow-lg z-10 transition-all duration-300">
+                <Calendar className="w-full h-full" showOutsideDays={false} />
+              </div>
+            )}
+          </div>
 
           {/* User dropdown */}
           <div className="relative inline-block" ref={userDropdownRef}>
@@ -235,16 +246,14 @@ const userDropdownRef = useRef(null);
               onClick={() => setIsUserDropdownOpen((prev) => !prev)}
             />
 
-            {isUserDropdownOpen&& (
+            {isUserDropdownOpen && (
               <div className="absolute right-0 mt-4 w-40 bg-white rounded-xl font-semibold shadow-lg z-10 transition-all duration-300">
                 <ul className="flex items-center gap-2 px-3 py-2 cursor-pointer">
-                  <User2Icon/>
-                  <span className="text-base">
-                    Hi {user?.name}
-                  </span>
+                  <User2Icon />
+                  <span className="text-base">Hi {user?.name}</span>
                 </ul>
-                
-                {/* Credit section - Visible on mobile only */}
+
+                {/* Credit section - Mobile only */}
                 <div className="md:hidden px-3 py-2 border-t border-gray-100">
                   <div className="text-sm font-medium text-gray-600 mb-2">
                     Credit: {credit} left
@@ -261,9 +270,9 @@ const userDropdownRef = useRef(null);
                     className="!w-full !text-sm !py-2"
                   />
                 </div>
-                
+
                 <ul className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:border hover:bg-slate-200 ">
-                  <Settings/>
+                  <Settings />
                   <span className="text-base" onClick={onSettings}>
                     Settings
                   </span>
@@ -313,10 +322,20 @@ const userDropdownRef = useRef(null);
           </div>
         </div>
       )}
-
-      
     </>
   );
-};
+}
 
-export default MainNavbar;
+export default function MainNavbar() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-16 bg-slate-50 shadow">
+          Loading Navbar...
+        </div>
+      }
+    >
+      <MainNavbarInner />
+    </Suspense>
+  );
+}
