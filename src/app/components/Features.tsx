@@ -1,20 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import createGlobe from "cobe";
-import { motion } from "framer-motion";  // Fixed import (assuming Framer Motion; adjust if needed)
+import { motion } from "framer-motion"; 
 import { IconBrandYoutubeFilled } from "@tabler/icons-react";
-// ... (rest of your imports remain the same)
 
 interface Feature {
     title: string;
     description: string;
-    skeleton: React.JSX.Element;  // Updated from JSX.Element
+    skeleton: React.JSX.Element;  
     className: string;
   }
   
-  // ... (the rest of your code remains unchanged)
-  
-
 export function FeaturesSectionDemo() {
   const features: Feature[] = [
     {
@@ -183,6 +179,9 @@ export const SkeletonTwo = () => {
     "https://images.unsplash.com/photo-1546484475-7f7bd55792da?q=80&w=2581&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ];
 
+  // Pre-generate random values - same on server and client
+  const rotations = [8, -5, 12, -8, 3, 15, -10, 6, -12, 9];
+
   const imageVariants = {
     whileHover: {
       scale: 1.1,
@@ -195,17 +194,16 @@ export const SkeletonTwo = () => {
       zIndex: 100,
     },
   };
+
   return (
-    <div
-      className="relative flex flex-col items-start p-8 gap-10 h-full overflow-hidden">
-      {/* TODO */}
+    <div className="relative flex flex-col items-start p-8 gap-10 h-full overflow-hidden">
       <div className="flex flex-row -ml-20">
         {images.map((image, idx) => (
           <motion.div
             variants={imageVariants}
             key={"images-first" + idx}
             style={{
-              rotate: Math.random() * 20 - 10,
+              rotate: rotations[idx] || 0, // Use pre-generated rotation
             }}
             whileHover="whileHover"
             whileTap="whileTap"
@@ -224,7 +222,7 @@ export const SkeletonTwo = () => {
           <motion.div
             key={"images-second" + idx}
             style={{
-              rotate: Math.random() * 20 - 10,
+              rotate: rotations[idx + 5] || 0, // Use different pre-generated values
             }}
             variants={imageVariants}
             whileHover="whileHover"
@@ -239,13 +237,12 @@ export const SkeletonTwo = () => {
           </motion.div>
         ))}
       </div>
-      <div
-        className="absolute left-0 z-[100] inset-y-0 w-20 bg-gradient-to-r from-white dark:from-black to-transparent  h-full pointer-events-none" />
-      <div
-        className="absolute right-0 z- inset-y-0 w-20 bg-gradient-to-l from-white dark:from-black  to-transparent h-full pointer-events-none" />
+      <div className="absolute left-0 z-[100] inset-y-0 w-20 bg-gradient-to-r from-white dark:from-black to-transparent  h-full pointer-events-none" />
+      <div className="absolute right-0 z- inset-y-0 w-20 bg-gradient-to-l from-white dark:from-black  to-transparent h-full pointer-events-none" />
     </div>
   );
 };
+
 
 export const SkeletonFour = () => {
   return (
