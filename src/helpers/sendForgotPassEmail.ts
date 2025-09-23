@@ -17,7 +17,7 @@ export async function sendForgotPassEmail(
       from: 'onboarding@resend.dev', // Using Resend's test domain
       to: 'aniketsahu0307@gmail.com', // For testing, using a hardcoded email
       // to: [email], // Will be used in production
-      subject: 'CampusHire - Password Reset Code',
+      subject: 'Stream Calendar - Password Reset Code',
       react: forgotPassEmail({ username, otp }),
     });
 

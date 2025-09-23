@@ -14,7 +14,7 @@ import Navbar from "@/app/components/Navbar";
 function VerifyOtpInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email"); // Extract email from URL
+  const email = searchParams.get("email"); 
 
   const {
     register,
@@ -26,7 +26,7 @@ function VerifyOtpInner() {
 
   const onSubmit = async (data: z.infer<typeof confirmPasswordSchema>) => {
     try {
-      await axios.post("/api/set-new-pass", { ...data, email });
+      await axios.patch("/api/set-new-pass", { ...data, email });
       router.replace("/sign-in");
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;

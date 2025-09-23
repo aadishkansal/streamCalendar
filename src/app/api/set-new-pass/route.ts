@@ -6,9 +6,9 @@ export async function PATCH(request: Request) {
   await dbConnect();
 
   try {
-    const {email, password, confirmedPassword } = await request.json();
+    const {email, password, confirmPassword } = await request.json();
 
-    if (!email || !password || !confirmedPassword) {
+    if (!email || !password || !confirmPassword) {
       return new Response(
         JSON.stringify({ success: false, message: 'Missing required fields' }),
         { status: 400 }
@@ -24,7 +24,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if(password!=confirmedPassword){
+    if(password!=confirmPassword){
         return Response.json(
             {
               success: false,

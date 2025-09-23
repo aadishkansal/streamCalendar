@@ -46,18 +46,16 @@ export default function DashboardClient({ userName }: Props) {
         url,
       };
       setPlaylist(combinedData);
-      sectionRef.current?.scrollIntoView({ behavior: "smooth" });
       setTimeout(() => {
         sectionRef.current?.scrollIntoView({ 
           behavior: "smooth",
-          block: "start",  // Scroll to the start of the element
+          block: "start",  
           inline: "nearest"
         });
       }, 100);
       setTimeout(() => {
         setLoading(false);
       }, 2000);
-      console.log("Response data:", combinedData);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       console.error(
@@ -68,7 +66,6 @@ export default function DashboardClient({ userName }: Props) {
     }
   };
 
-  // Check if button should be disabled
   const isButtonDisabled = usedCredits >= 2 || loading || !inputRef.current?.value?.trim();
   const remainingCredits = Math.max(0, 2 - usedCredits);
 
