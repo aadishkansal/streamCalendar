@@ -48,7 +48,7 @@ function SignInFormInner() {
 
     if (result?.ok) {
       console.log(result);
-      router.push("/dashboard");
+      router.replace("/dashboard");
     }
   };
 

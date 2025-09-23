@@ -16,7 +16,6 @@ export default function DashboardPage() {
     
     <div className="h-screen w-screen bg-gradient-to-r from-[#5d57ee]/90 to-purple-400">
       <DashboardClient userName={user?.name || "User"} />
-  
   </div>
   );
 }

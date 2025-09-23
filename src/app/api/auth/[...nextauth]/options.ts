@@ -30,7 +30,9 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (user.provider && user.provider === "google") {
-            throw new Error("This account uses Google sign-in. Please log in with Google.");
+            throw new Error(
+              "This account uses Google sign-in. Please log in with Google."
+            );
           }
 
           const isPasswordCorrect = await bcrypt.compare(
@@ -53,18 +55,15 @@ export const authOptions: NextAuthOptions = {
           console.error("Authorization error:", err);
           throw new Error("Unable to log in");
         }
-      }
-
+      },
     }),
 
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-
   ],
   callbacks: {
-
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         try {
@@ -74,7 +73,8 @@ export const authOptions: NextAuthOptions = {
           if (existingUser) {
             existingUser.name = user.name || existingUser.name;
             existingUser.provider = existingUser.provider || account.provider;
-            existingUser.providerId = existingUser.providerId || account.providerAccountId;
+            existingUser.providerId =
+              existingUser.providerId || account.providerAccountId;
             await existingUser.save();
           } else {
             await User.create({
@@ -111,7 +111,7 @@ export const authOptions: NextAuthOptions = {
       return `${baseUrl}/dashboard`;
     },
 
-    async jwt({ user, token, account }) {
+    async jwt({ user, token, account, trigger, session }) {
       if (user) {
         if (account?.provider === "google") {
           await dbConnect();

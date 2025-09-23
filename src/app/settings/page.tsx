@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { use, useEffect } from "react";
 import MainNavbar from "../components/MainNavBar";
 import { BellIcon, HelpCircleIcon, Settings2, ReceiptIndianRupeeIcon, Eye, EyeOff, Save, Trash2, Shield, User2, ArrowLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -21,6 +21,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { useSession } from "next-auth/react";
+import { set } from "lodash";
 
 const invoices = [
   {
@@ -55,20 +58,22 @@ interface FormData {
 }
 
 const Setting = () => {
+  const {data: session} =  useSession();
   const [activeSection, setActiveSection] = useState('account');
   const [showMobileMenu, setShowMobileMenu] = useState(true);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [formData, setFormData] = useState<FormData>({
-    name: 'John Doe',
-    email: 'john@example.com',
-    password: '',
-    notifications: {
-      email: true,
-      updates: true,
-      marketing: true,
-    }
-  });
+  const [name, setName] = useState<string>(session?.user?.name || "");
   const router = useRouter();
+  const { update } = useSession();
+  const [formData, setFormData] = useState({
+    name: session?.user?.name || "",
+    email: "",
+    password: "",
+    notifications: {
+      email: false,
+      updates: false,
+      marketing: false,
+    },
+  });
 
   const settingsItems = [
     {
@@ -98,11 +103,20 @@ const Setting = () => {
     },
   ];
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const submitNewName = async () => {
+    try{
+      const res = await axios.put("/api/changeName", { name });
+    }catch (error) {
+      console.error("Error changing name", error);
+    }
+  }
+
+  useEffect(() => {
+    setName(session?.user?.name || "");
+  }, [session?.user?.name]);
+
+  const handleInputChange = (name: string) => {
+    setName(name);
   };
 
   const handleNotificationChange = (type: keyof FormData['notifications'], value: boolean) => {
@@ -116,7 +130,16 @@ const Setting = () => {
   };
 
   const deleteAccount = () => {
-    router.push("delete-acc");
+    const response = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+    if (response) {
+      axios.delete('/api/delete-user')
+        .then(() => {
+          router.push('/');
+        })
+        .catch((error) => {
+          console.error("There was an error deleting the account!", error);
+        });
+    }
   }
 
   const handleSectionClick = (sectionId: string) => {
@@ -137,40 +160,12 @@ const Setting = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              value={name}
+              onChange={(e) => handleInputChange(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 pr-10"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 pr-10"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                placeholder="Enter new password"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-          <button className="flex items-center space-x-2 px-4 font-semibold text-sm py-2 bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white rounded-full hover:from-[#353188] hover:to-[#5d57ee] transition-colors">
+          <button className="flex items-center space-x-2 px-4 font-semibold text-sm py-2 bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white rounded-full hover:from-[#353188] hover:to-[#5d57ee] transition-colors" onClick={submitNewName}>
             <Save size={16} />
             <span>Save Changes</span>
           </button>
