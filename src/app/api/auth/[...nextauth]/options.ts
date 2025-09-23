@@ -61,6 +61,17 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      profile: async (googleProfile) => {
+        await dbConnect();
+        const dbUser = await User.findOne({ email: googleProfile.email });
+        const name = dbUser?.name || googleProfile.name;
+        return {
+          id: googleProfile.sub,
+          name,
+          email: googleProfile.email,
+          image: googleProfile.picture,
+        };
+      },
     }),
   ],
   callbacks: {
@@ -131,6 +142,36 @@ export const authOptions: NextAuthOptions = {
           token.projectIds = user.projectIds;
         }
       }
+
+      if (!user && token._id) {
+        await dbConnect();
+        const dbUser = await User.findById(token._id);
+        if (dbUser) {
+          token.name = dbUser.name;
+          token.username = dbUser.username;
+          token.email = dbUser.email;
+          token.projectIds = dbUser.projectIds;
+        }
+      }
+
+      if (trigger === "update" && session) {
+        if (session.name) {
+          token.name = session.name;
+        }
+        if (session.username) {
+          token.username = session.username;
+        }
+        if (session.projectIds) {
+          token.projectIds = session.projectIds;
+        }
+        if (session.email) {
+          token.email = session.email;
+        }
+        if (session._id) {
+          token._id = session._id;
+        }
+      }
+
       return token;
     },
 
@@ -142,6 +183,18 @@ export const authOptions: NextAuthOptions = {
           username: token.username as string,
           projectIds: token.projectIds as any[],
         };
+      }
+
+      try {
+        await dbConnect();
+        const dbUser = await User.findById(session.user._id).lean();
+        if (dbUser) {
+          session.user.name = dbUser.name;
+          session.user.username = dbUser.username;
+          session.user.projectIds = dbUser.projectIds;
+        }
+      } catch (e) {
+        console.error("Error refreshing session from DB:", e);
       }
 
       return session;

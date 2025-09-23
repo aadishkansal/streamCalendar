@@ -4,12 +4,14 @@ import Button from "@/app/components/ui/Button";
 import { YplaylistType } from "@/schemas/Yplaylist";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 type RenderProps = {
   data: YplaylistType;
 };
 
 const Render: React.FC<RenderProps> = ({ data }) => {
+  const { data: session, update } = useSession();
   const [formData, setFormData] = useState({
     playlistId: data.playlistId,
     title: "",
@@ -35,7 +37,7 @@ const Render: React.FC<RenderProps> = ({ data }) => {
 
   useEffect(() => {
     if (data?.playlistId) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         playlistId: data.playlistId,
         url: data.url,
@@ -78,13 +80,18 @@ const Render: React.FC<RenderProps> = ({ data }) => {
 
   const handleSubmit = async () => {
     try {
-      console.log(formData)
+      console.log(formData);
       const response = await axios.post("/api/project-details", {
         ...formData,
         start_date: new Date(formData.start_date),
         end_date: new Date(formData.end_date),
       });
-      router.push("/projects");
+      if (response.data.success) {
+        await update({
+          projectIds: response.data.updatedProjectIds,
+        });
+        router.push("/projects?refresh=" + Date.now());
+      }
       console.log("✅ Success:", response.data);
     } catch (err) {
       console.error("❌ API Error:", err);
@@ -94,7 +101,11 @@ const Render: React.FC<RenderProps> = ({ data }) => {
   return (
     <div className="flex flex-col items-center justify-center bg-white drop-shadow-xl rounded-xl w-[520px] h-[740px] gap-5 p-6">
       <div>
-        <img src={data.thumbnail} alt={data.title} className="rounded-2xl mt-4 w-full h-[240px] place-items-center " />
+        <img
+          src={data.thumbnail}
+          alt={data.title}
+          className="rounded-2xl mt-4 w-full h-[240px] place-items-center "
+        />
       </div>
 
       <div className="text-center">
@@ -163,16 +174,21 @@ const Render: React.FC<RenderProps> = ({ data }) => {
       </div>
 
       <div className="flex gap-2 mt-1 mr-auto items-center">
-  <input
-    type="checkbox"
-    className="appearance-none border border-black rounded-full size-5 checked:bg-[#5D57EE] focus:outline-none focus:ring-0"
-    checked={formData.days_selected.length === 7}
-    onChange={handleCheckboxEveryday}
-  />
-  <label className="font-normal">Every Day</label>
-</div>
+        <input
+          type="checkbox"
+          className="appearance-none border border-black rounded-full size-5 checked:bg-[#5D57EE] focus:outline-none focus:ring-0"
+          checked={formData.days_selected.length === 7}
+          onChange={handleCheckboxEveryday}
+        />
+        <label className="font-normal">Every Day</label>
+      </div>
 
-      <Button type="submit" title="Create" variant="btn_big1" onClick={handleSubmit} />
+      <Button
+        type="submit"
+        title="Create"
+        variant="btn_big1"
+        onClick={handleSubmit}
+      />
     </div>
   );
 };

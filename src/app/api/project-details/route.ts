@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       days_selected,
       streak,
       completed: false,
-    });
+    }) as mongoose.Document & { _id: Types.ObjectId };
 
     // ✅ Link project to user
     const dbUser = await User.findById(userId);
@@ -82,7 +82,12 @@ export async function POST(request: Request) {
     await dbUser.save();
 
     return NextResponse.json(
-      { success: true, message: "Details stored successfully" },
+      { 
+        success: true, 
+        message: "Details stored successfully",
+        projectId: project._id.toString(),
+        updatedProjectIds: dbUser.projectIds
+      },
       { status: 200 }
     );
   } catch (error) {

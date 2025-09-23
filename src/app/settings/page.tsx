@@ -1,7 +1,20 @@
 "use client";
 import React, { use, useEffect } from "react";
 import MainNavbar from "../components/MainNavBar";
-import { BellIcon, HelpCircleIcon, Settings2, ReceiptIndianRupeeIcon, Eye, EyeOff, Save, Trash2, Shield, User2, ArrowLeft, ChevronRight } from "lucide-react";
+import {
+  BellIcon,
+  HelpCircleIcon,
+  Settings2,
+  ReceiptIndianRupeeIcon,
+  Eye,
+  EyeOff,
+  Save,
+  Trash2,
+  Shield,
+  User2,
+  ArrowLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { set } from "lodash";
 
 const invoices = [
@@ -58,8 +71,8 @@ interface FormData {
 }
 
 const Setting = () => {
-  const {data: session} =  useSession();
-  const [activeSection, setActiveSection] = useState('account');
+  const { data: session } = useSession();
+  const [activeSection, setActiveSection] = useState("account");
   const [showMobileMenu, setShowMobileMenu] = useState(true);
   const [name, setName] = useState<string>(session?.user?.name || "");
   const router = useRouter();
@@ -104,12 +117,15 @@ const Setting = () => {
   ];
 
   const submitNewName = async () => {
-    try{
+    try {
       const res = await axios.put("/api/changeName", { name });
-    }catch (error) {
+      await update({
+        name: name,
+      });
+    } catch (error) {
       console.error("Error changing name", error);
     }
-  }
+  };
 
   useEffect(() => {
     setName(session?.user?.name || "");
@@ -119,28 +135,35 @@ const Setting = () => {
     setName(name);
   };
 
-  const handleNotificationChange = (type: keyof FormData['notifications'], value: boolean) => {
-    setFormData(prev => ({
+  const handleNotificationChange = (
+    type: keyof FormData["notifications"],
+    value: boolean
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       notifications: {
         ...prev.notifications,
-        [type]: value
-      }
+        [type]: value,
+      },
     }));
   };
 
-  const deleteAccount = () => {
-    const response = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+  const deleteAccount = async () => {
+    const response = confirm(
+      "Are you sure you want to delete your account? This action cannot be undone."
+    );
     if (response) {
-      axios.delete('/api/delete-user')
-        .then(() => {
-          router.push('/');
-        })
-        .catch((error) => {
-          console.error("There was an error deleting the account!", error);
+      try {
+        await axios.delete("/api/delete-user");
+        await signOut({
+          redirect: true,
+          callbackUrl: "/",
         });
+      } catch (error) {
+        console.error("There was an error deleting the account!", error);
+      }
     }
-  }
+  };
 
   const handleSectionClick = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -157,7 +180,9 @@ const Setting = () => {
         <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Full Name
+            </label>
             <input
               type="text"
               value={name}
@@ -165,7 +190,10 @@ const Setting = () => {
               className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 pr-10"
             />
           </div>
-          <button className="flex items-center space-x-2 px-4 font-semibold text-sm py-2 bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white rounded-full hover:from-[#353188] hover:to-[#5d57ee] transition-colors" onClick={submitNewName}>
+          <button
+            className="flex items-center space-x-2 px-4 font-semibold text-sm py-2 bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white rounded-full hover:from-[#353188] hover:to-[#5d57ee] transition-colors"
+            onClick={submitNewName}
+          >
             <Save size={16} />
             <span>Save Changes</span>
           </button>
@@ -173,8 +201,14 @@ const Setting = () => {
       </div>
 
       <div className="p-4 sm:p-6 rounded-xl bg-white shadow-2xl border border-red-200">
-        <p className="text-red-600 font-medium mb-4">Once you delete your account, there is no going back. Please be certain.</p>
-        <button onClick={deleteAccount} className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors">
+        <p className="text-red-600 font-medium mb-4">
+          Once you delete your account, there is no going back. Please be
+          certain.
+        </p>
+        <button
+          onClick={deleteAccount}
+          className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors"
+        >
           <Trash2 size={16} />
           <span>Delete Account</span>
         </button>
@@ -190,13 +224,17 @@ const Setting = () => {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium">Email Notifications</h4>
-              <p className="text-sm text-gray-600">Receive important updates via email</p>
+              <p className="text-sm text-gray-600">
+                Receive important updates via email
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.notifications.email}
-                onChange={(e) => handleNotificationChange('email', e.target.checked)}
+                onChange={(e) =>
+                  handleNotificationChange("email", e.target.checked)
+                }
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
@@ -205,13 +243,17 @@ const Setting = () => {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium">Push Notifications</h4>
-              <p className="text-sm text-gray-600">Receive notifications in your browser</p>
+              <p className="text-sm text-gray-600">
+                Receive notifications in your browser
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.notifications.updates}
-                onChange={(e) => handleNotificationChange('updates', e.target.checked)}
+                onChange={(e) =>
+                  handleNotificationChange("updates", e.target.checked)
+                }
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
@@ -220,13 +262,17 @@ const Setting = () => {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium">Marketing Emails</h4>
-              <p className="text-sm text-gray-600">Receive product updates and promotions</p>
+              <p className="text-sm text-gray-600">
+                Receive product updates and promotions
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.notifications.marketing}
-                onChange={(e) => handleNotificationChange('marketing', e.target.checked)}
+                onChange={(e) =>
+                  handleNotificationChange("marketing", e.target.checked)
+                }
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
@@ -255,15 +301,27 @@ const Setting = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Package className="text-primary size-5" />
                   <h2 className="text-lg font-semibold">Pro Plan</h2>
-                  <Badge className="border border-slate-300 rounded-xl">Current Plan</Badge>
+                  <Badge className="border border-slate-300 rounded-xl">
+                    Current Plan
+                  </Badge>
                 </div>
                 <p className="text-muted-foreground mt-1 text-sm">
                   $29/month • Renews on April 1, 2024
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                <Button variant="outline" className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none">Change Plan</Button>
-                <Button variant="destructive" className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none">Cancel Plan</Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none"
+                >
+                  Change Plan
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none"
+                >
+                  Cancel Plan
+                </Button>
               </div>
             </div>
 
@@ -276,7 +334,10 @@ const Setting = () => {
                   </div>
                   <span className="text-sm">8,543 / 10,000</span>
                 </div>
-                <Progress value={85.43} className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border" />
+                <Progress
+                  value={85.43}
+                  className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border"
+                />
               </div>
 
               <div>
@@ -287,7 +348,10 @@ const Setting = () => {
                   </div>
                   <span className="text-sm">143 / 200</span>
                 </div>
-                <Progress value={71.5} className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border" />
+                <Progress
+                  value={71.5}
+                  className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border"
+                />
               </div>
             </div>
           </CardContent>
@@ -305,7 +369,12 @@ const Setting = () => {
                   </span>
                 </div>
               </div>
-              <Button variant="outline" className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto">Update Payment Method</Button>
+              <Button
+                variant="outline"
+                className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto"
+              >
+                Update Payment Method
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -314,7 +383,11 @@ const Setting = () => {
           <CardContent className="p-4 sm:p-6">
             <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <h2 className="text-lg font-semibold">Billing History</h2>
-              <Button variant="outline" size="sm" className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto"
+              >
                 <Download className="mr-2 size-4" />
                 Download All
               </Button>
@@ -338,7 +411,9 @@ const Setting = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                    <Badge variant="outline" className="rounded-xl font-normal">{invoice.status}</Badge>
+                    <Badge variant="outline" className="rounded-xl font-normal">
+                      {invoice.status}
+                    </Badge>
                     <span className="font-medium">{invoice.amount}</span>
                     <Button variant="ghost" size="sm">
                       <Download className="size-4" />
@@ -357,8 +432,8 @@ const Setting = () => {
     <div className="mx-auto max-w-lg">
       <div className="mb-10 text-center">
         <p className="text-muted-foreground">
-          I'd love to hear from you. Please fill out the form below and
-          I'll get back to you as soon as possible.
+          I'd love to hear from you. Please fill out the form below and I'll get
+          back to you as soon as possible.
         </p>
       </div>
 
@@ -369,7 +444,13 @@ const Setting = () => {
               <Label htmlFor="name" className="mb-2 block font-semibold">
                 Name
               </Label>
-              <Input id="name" name="name" placeholder="Your name" required className='rounded-xl border border-slate-400' />
+              <Input
+                id="name"
+                name="name"
+                placeholder="Your name"
+                required
+                className="rounded-xl border border-slate-400"
+              />
             </div>
 
             <div>
@@ -382,7 +463,7 @@ const Setting = () => {
                 type="email"
                 placeholder="Your email address"
                 required
-                className='rounded-xl border border-slate-400'
+                className="rounded-xl border border-slate-400"
               />
             </div>
 
@@ -395,7 +476,7 @@ const Setting = () => {
                 name="subject"
                 placeholder="What's this regarding?"
                 required
-                className='rounded-xl border border-slate-400'
+                className="rounded-xl border border-slate-400"
               />
             </div>
 
@@ -413,7 +494,10 @@ const Setting = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full rounded-full text-white bg-gradient-to-r from-[#5d57ee] to-[#353188] transition-all duration-300 ease-in-out hover:from-[#353188] hover:to-[#5d57ee] hover:shadow-lg border-none outline-none font-semibold">
+            <Button
+              type="submit"
+              className="w-full rounded-full text-white bg-gradient-to-r from-[#5d57ee] to-[#353188] transition-all duration-300 ease-in-out hover:from-[#353188] hover:to-[#5d57ee] hover:shadow-lg border-none outline-none font-semibold"
+            >
               Send Message
             </Button>
 
@@ -428,13 +512,13 @@ const Setting = () => {
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'account':
+      case "account":
         return renderAccountContent();
-      case 'notification':
+      case "notification":
         return renderNotificationsContent();
-      case 'billing':
+      case "billing":
         return renderBillingContent();
-      case 'support':
+      case "support":
         return renderSupportContent();
       default:
         return (
@@ -486,8 +570,12 @@ const Setting = () => {
                   <Settings className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
-                  <p className="text-sm text-gray-600">Manage your preferences</p>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Settings
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Manage your preferences
+                  </p>
                 </div>
               </div>
             </div>
@@ -502,12 +590,15 @@ const Setting = () => {
                     <button
                       key={item.id}
                       onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all ${isActive
-                        ? 'bg-violet-50 border-l-4 border-[#5d57ee]'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all ${
+                        isActive
+                          ? "bg-violet-50 border-l-4 border-[#5d57ee]"
+                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#5d57ee]' : 'text-gray-500'}`} />
+                      <Icon
+                        className={`w-5 h-5 ${isActive ? "text-[#5d57ee]" : "text-gray-500"}`}
+                      />
                       <span className="font-medium">{item.label}</span>
                     </button>
                   );
@@ -520,7 +611,7 @@ const Setting = () => {
           <div className="flex-1 p-8 rounded-e-xl border-slate-100 mb-10 border overflow-y-auto">
             <div className="max-w-4xl">
               <h1 className="text-2xl font-semibold text-gray-900 mb-8">
-                {settingsItems.find(item => item.id === activeSection)?.label}
+                {settingsItems.find((item) => item.id === activeSection)?.label}
               </h1>
               {renderContent()}
             </div>
@@ -538,8 +629,12 @@ const Setting = () => {
                     <Settings className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
-                    <p className="text-sm text-gray-600">Manage your preferences</p>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Settings
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      Manage your preferences
+                    </p>
                   </div>
                 </div>
               </div>
@@ -557,13 +652,14 @@ const Setting = () => {
                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                   </button>
                   <h1 className="text-lg font-semibold text-gray-900">
-                    {settingsItems.find(item => item.id === activeSection)?.label}
+                    {
+                      settingsItems.find((item) => item.id === activeSection)
+                        ?.label
+                    }
                   </h1>
                 </div>
               </div>
-              <div className="p-4">
-                {renderContent()}
-              </div>
+              <div className="p-4">{renderContent()}</div>
             </div>
           )}
         </div>

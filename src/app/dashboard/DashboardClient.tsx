@@ -48,9 +48,16 @@ export default function DashboardClient({ userName }: Props) {
       setPlaylist(combinedData);
       sectionRef.current?.scrollIntoView({ behavior: "smooth" });
       setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ 
+          behavior: "smooth",
+          block: "start",  // Scroll to the start of the element
+          inline: "nearest"
+        });
+      }, 100);
+      setTimeout(() => {
         setLoading(false);
-        sectionRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 2000);
+      console.log("Response data:", combinedData);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       console.error(

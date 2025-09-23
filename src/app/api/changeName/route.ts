@@ -2,6 +2,7 @@ import dbConnect from "@/lib/dbConnect";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import User from "@/model/User";
+import { after } from "lodash";
 
 export async function PUT(req: Request) {
   await dbConnect();
@@ -24,7 +25,18 @@ export async function PUT(req: Request) {
       );
     }
 
-    await User.findByIdAndUpdate(session.user._id, { name });
+    const dbUser = await User.findById(session.user._id);
+
+    if (!dbUser) {
+      return Response.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    dbUser.name = name;
+    await dbUser.save();
+
     return Response.json(
       { success: true },
       { status: 200 }

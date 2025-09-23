@@ -2,11 +2,12 @@
 
 // add a check, because the front-end is rendering when the values are not yet available
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Calendar, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import MainNavbar from '../components/MainNavBar';
 import axios from 'axios';
+import { useSession } from 'next-auth/react';
 
 interface Project {
   _id: string;
@@ -21,10 +22,19 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [session?.user?.projectIds]);
+
+  useEffect(() => {
+    const refreshParam = searchParams.get('refresh');
+    if (refreshParam) {
+      fetchProjects();
+    }
+  }, [searchParams]);
 
   const fetchProjects = async () => {
     try {
