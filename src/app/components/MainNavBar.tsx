@@ -7,8 +7,8 @@ import Button from "./ui/Button";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
-import { FlameIcon, Settings, User2Icon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { Settings, User2Icon } from "lucide-react";
+
 
 function MainNavbarInner() {
   const router = useRouter();
@@ -200,43 +200,6 @@ function MainNavbarInner() {
             />
           </div>
 
-          {/* Calendar dropdown (mobile only) */}
-          <div
-            className="lg:hidden relative inline-flex flex-row items-center"
-            ref={calendarRef}
-          >
-            <FlameIcon
-              className="w-6 h-6"
-              onClick={() => setIsCalendarOpen((prev) => !prev)}
-              style={{
-                stroke: "url(#halfOrangeGradient)",
-              }}
-            />
-
-            {/* SVG gradient definition */}
-            <svg width="0" height="0">
-              <defs>
-                <linearGradient
-                  id="halfOrangeGradient"
-                  x1="0"
-                  x2="0"
-                  y1="0"
-                  y2="1"
-                >
-                  <stop offset="50%" stopColor="#c86300" />
-                  <stop offset="50%" stopColor="#f97316" />
-                </linearGradient>
-              </defs>
-            </svg>
-
-            <span className="text-base font-semibold text-gray-700 mt-1">3</span>
-            {isCalendarOpen && (
-              <div className="absolute right-0 mt-96 w-60 bg-white rounded-xl font-semibold shadow-lg z-10 transition-all duration-300">
-                <Calendar className="w-full h-full" showOutsideDays={false} />
-              </div>
-            )}
-          </div>
-
           {/* User dropdown */}
           <div className="relative inline-block" ref={userDropdownRef}>
             <img
@@ -338,4 +301,4 @@ export default function MainNavbar() {
       <MainNavbarInner />
     </Suspense>
   );
-}//hi
+}                     

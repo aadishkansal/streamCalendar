@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 
 // Import the actual homepage content
-import CalendarApp from './components/CalendarApp';
+
 import Navbar from './components/Navbar';
-import Hero, { BackgroundBeamsWithCollisionDemo } from './components/Hero';
+import { BackgroundBeamsWithCollisionDemo } from './components/Hero';
 import PricingSectionCards from './plans/page';
 import Footer from './components/Footer';
 //import { FeaturesSectionDemo } from './components/Features';
@@ -23,7 +23,6 @@ export default async function RootPage() {
       <BackgroundBeamsWithCollisionDemo />
       {/* <FeaturesSectionDemo /> */}
       <PricingSectionCards />
-      <Footer />
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client"
 
-import { use } from 'react'
-import CalendarApp from "@/app/components/CalendarApp";
+import { use } from 'react';
+import { CalendarContainer } from '@/components/calendar/CalendarContainer';
 
 interface CalendarPageProps {
   params: Promise<{
@@ -12,9 +12,5 @@ interface CalendarPageProps {
 export default function CalendarPage({ params }: CalendarPageProps) {
   const { projectId } = use(params);
 
-  return (
-    <div className="min-h-screen">
-      <CalendarApp projectId={projectId} />
-    </div>
-  );
+  return <CalendarContainer projectId={projectId} />;
 }

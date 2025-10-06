@@ -10,6 +10,7 @@ export interface IProject extends Document {
   time_slot_end: string;
   days_selected: string[];
   streak?: boolean[];
+  completion_timestamps?: (Date | null)[];
   completed: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -33,6 +34,7 @@ const projectSchema: Schema<IProject> = new mongoose.Schema(
     time_slot_end: { type: String, required: true },
     days_selected: { type: [String], required: true },
     streak: { type: [Boolean] },
+    completion_timestamps: { type: [Date] },
     completed: { type: Boolean, default: false },
   },
   { timestamps: true }
