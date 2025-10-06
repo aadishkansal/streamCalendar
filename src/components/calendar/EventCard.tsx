@@ -8,10 +8,12 @@ import { format } from 'date-fns';
 
 interface EventCardProps {
   event: VideoEvent;
-  onMarkComplete: (eventId: string) => Promise<void>;
+  onMarkComplete: (eventId: string, shouldUnmark?: boolean) => Promise<void>;
   onEventClick?: (event: VideoEvent) => void;
   compact?: boolean;
   showDate?: boolean;
+  // Provided by MobileCalendar to avoid duplicate slot start display
+  computedStartTime?: string;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({
@@ -19,20 +21,29 @@ export const EventCard: React.FC<EventCardProps> = ({
   onMarkComplete,
   onEventClick,
   compact = false,
-  showDate = false
+  showDate = false,
+  computedStartTime
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleMarkComplete = async (e: React.MouseEvent) => {
+  const mark = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (event.completed || isLoading) return;
-
+    if (isLoading) return;
     try {
       setIsLoading(true);
-      await onMarkComplete(event.id);
-    } catch (error) {
-      console.error('Failed to mark event as complete:', error);
+      await onMarkComplete(event.id, false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const unmark = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isLoading) return;
+    try {
+      setIsLoading(true);
+      await onMarkComplete(event.id, true);
     } finally {
       setIsLoading(false);
     }
@@ -55,14 +66,15 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   const eventColor = getEventColor(event);
   const isOverdue = isEventOverdue(event);
-  
+
+  // Compact mobile card
   if (compact) {
     return (
       <div
         className={`
-          ${eventColor} text-white rounded-lg p-3 mb-2 cursor-pointer
+          ${eventColor} text-white rounded-xl p-3 mb-2 cursor-pointer
           transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
-          ${isExpanded ? 'ring-2 ring-white ring-opacity-50' : ''}
+          ${isExpanded ? 'ring-2 ring-white/50' : ''}
         `}
         onClick={handleCardClick}
       >
@@ -71,9 +83,9 @@ export const EventCard: React.FC<EventCardProps> = ({
             <h4 className="font-medium text-sm truncate">{event.title}</h4>
             <div className="flex items-center space-x-2 mt-1">
               <Clock className="h-3 w-3" />
-              <span className="text-xs opacity-90">
-                {formatDuration(event.duration)}
-              </span>
+              <span className="text-xs opacity-90">{formatDuration(event.duration)}</span>
+              <span className="text-xs opacity-60">•</span>
+              <span className="text-xs opacity-90">{computedStartTime ?? event.scheduledTime ?? '-'}</span>
               {showDate && (
                 <>
                   <span className="text-xs opacity-60">•</span>
@@ -84,17 +96,27 @@ export const EventCard: React.FC<EventCardProps> = ({
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2 ml-2">
             {event.completed ? (
-              <div className="bg-white bg-opacity-20 rounded-full p-1">
-                <Check className="h-4 w-4" />
-              </div>
+              <button
+                onClick={unmark}
+                disabled={isLoading}
+                className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors"
+                title="Unmark complete"
+              >
+                {isLoading ? (
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             ) : (
               <button
-                onClick={handleMarkComplete}
+                onClick={mark}
                 disabled={isLoading}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-1 transition-colors"
+                className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors"
+                title="Mark complete"
               >
                 {isLoading ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -103,7 +125,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                 )}
               </button>
             )}
-            
+
             {compact && (
               <button className="opacity-60">
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -112,27 +134,26 @@ export const EventCard: React.FC<EventCardProps> = ({
           </div>
         </div>
 
-        {/* Expanded Details */}
         {isExpanded && (
-          <div className="mt-3 pt-3 border-t border-white border-opacity-20">
+          <div className="mt-3 pt-3 border-t border-white/20">
             <p className="text-xs opacity-90 mb-3 line-clamp-2">
               {event.description || 'No description available'}
             </p>
-            
+
             <div className="flex items-center justify-between">
               <div className="text-xs opacity-80">
                 <div>Project: {event.projectName}</div>
-                {event.scheduledTime && (
-                  <div className="mt-1">Time: {event.scheduledTime}</div>
+                {(computedStartTime || event.scheduledTime) && (
+                  <div className="mt-1">Time: {computedStartTime ?? event.scheduledTime}</div>
                 )}
                 {isOverdue && !event.completed && (
                   <div className="mt-1 text-yellow-200">⚠️ Overdue</div>
                 )}
               </div>
-              
+
               <button
                 onClick={handleVideoClick}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg px-3 py-1 text-xs font-medium transition-colors flex items-center space-x-1"
+                className="bg-white/20 hover:bg-white/30 rounded-xl px-3 py-1 text-xs font-medium transition-colors flex items-center space-x-1"
               >
                 <Play className="h-3 w-3" />
                 <span>Watch</span>
@@ -145,7 +166,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     );
   }
 
-  // Full event card for desktop
+  // Desktop card (kept for consistency; toggles enabled)
   return (
     <div
       className={`
@@ -165,11 +186,8 @@ export const EventCard: React.FC<EventCardProps> = ({
             {event.projectName}
           </div>
         </div>
-        
-        <div className={`
-          w-3 h-3 rounded-full flex-shrink-0 ml-2
-          ${eventColor.replace('bg-', 'bg-')}
-        `} />
+
+        <div className="w-3 h-3 rounded-full flex-shrink-0 ml-2" />
       </div>
 
       {event.description && (
@@ -184,16 +202,8 @@ export const EventCard: React.FC<EventCardProps> = ({
             <Clock className="h-4 w-4" />
             <span>{formatDuration(event.duration)}</span>
           </div>
-          
-          {showDate && (
-            <div>
-              {format(event.scheduledDate, 'MMM d, h:mm a')}
-            </div>
-          )}
-          
-          {event.scheduledTime && (
-            <div>{event.scheduledTime}</div>
-          )}
+          {showDate && <div>{format(event.scheduledDate, 'MMM d, h:mm a')}</div>}
+          {event.scheduledTime && <div>{event.scheduledTime}</div>}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -206,14 +216,22 @@ export const EventCard: React.FC<EventCardProps> = ({
               <Play className="h-4 w-4" />
             </button>
           )}
-          
           {event.completed ? (
-            <div className="text-green-600 p-1">
-              <Check className="h-4 w-4" />
-            </div>
+            <button
+              onClick={unmark}
+              disabled={isLoading}
+              className="text-green-600 p-1"
+              title="Unmark complete"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </button>
           ) : (
             <button
-              onClick={handleMarkComplete}
+              onClick={mark}
               disabled={isLoading}
               className="text-gray-400 hover:text-green-600 p-1 rounded transition-colors"
               title="Mark as Complete"

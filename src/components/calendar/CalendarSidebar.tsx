@@ -299,7 +299,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = (props) => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 h-[calc(100vh-5rem)]">
+        <div className="flex-1 overflow-y-auto px-2 h-[calc(100vh-5rem)]">
           <DesktopCalendar {...props} />
         </div>
       </div>

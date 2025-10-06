@@ -1,5 +1,3 @@
-// src/lib/calendar-utils.ts
-
 import {
   format,
   startOfMonth,
@@ -21,7 +19,18 @@ import {
 } from 'date-fns';
 import { CalendarDay, VideoEvent } from '@/types/calendar';
 
-// Existing helpers...
+// Helper to parse HH:MM:SS duration to minutes with null safety
+const parseDurationToMinutes = (duration: string | undefined): number => {
+  if (!duration || typeof duration !== 'string') {
+    return 0;
+  }
+  const parts = duration.split(':').map(Number);
+  if (parts.length === 3) {
+    const [hours, minutes, seconds] = parts;
+    return hours * 60 + minutes + Math.ceil(seconds / 60);
+  }
+  return 0;
+};
 
 export const generateCalendarDays = (currentDate: Date): CalendarDay[] => {
   const monthStart = startOfMonth(currentDate);
@@ -70,10 +79,8 @@ export const generate3Days = (currentDate: Date): CalendarDay[] =>
     };
   });
 
-  export const getEventsForDate = (events: VideoEvent[], date: Date): VideoEvent[] => {
-    return events.filter(e => isSameDay(e.scheduledDate, date));
-  };
-  
+export const getEventsForDate = (events: VideoEvent[], date: Date): VideoEvent[] =>
+  events.filter(e => isSameDay(e.scheduledDate, date));
 
 export const getEventsForDateRange = (events: VideoEvent[], startDate: Date, endDate: Date): VideoEvent[] =>
   events.filter(event => {
@@ -124,21 +131,21 @@ export const formatDateHeader = (date: Date, view: string): string => {
 export const getTimeSlots = (): string[] => {
   const slots: string[] = [];
   for (let h = 0; h < 24; h++) {
-    slots.push(`${String(h).padStart(2,'0')}:00`);
-    slots.push(`${String(h).padStart(2,'0')}:30`);
+    slots.push(`${String(h).padStart(2, '0')}:00`);
+    slots.push(`${String(h).padStart(2, '0')}:30`);
   }
   return slots;
 };
 
 export const formatDuration = (min: number): string => {
-  const h = Math.floor(min/60), m = min%60;
+  const h = Math.floor(min / 60), m = min % 60;
   if (!h) return `${m}m`;
   if (!m) return `${h}h`;
   return `${h}h ${m}m`;
 };
 
-export const getEventColor = (event: VideoEvent): string =>
-  event.completed ? 'bg-green-500' : event.scheduledDate < new Date() ? 'bg-red-500' : 'bg-blue-500';
+export const  getEventColor = (event: VideoEvent): string =>
+  event.completed ? 'bg-green-500' : event.scheduledDate < new Date() ? 'bg-red-500' : 'bg-[#5d57ee]';
 
 export const getEventTextColor = (): string =>
   'text-white';
@@ -146,14 +153,18 @@ export const getEventTextColor = (): string =>
 export const isEventOverdue = (event: VideoEvent): boolean =>
   !event.completed && event.scheduledDate < new Date();
 
-// NEW: generateCalendarEvents
 export const generateCalendarEvents = (project: any, videos: any[]): VideoEvent[] => {
-  if (!project || !videos?.length) {
-    return [];
-  }
+  if (!project || !videos?.length) return [];
 
   const events: VideoEvent[] = [];
-  const { start_date, end_date, time_slot_start, time_slot_end, days_selected, streak = [] } = project;
+  const {
+    start_date,
+    end_date,
+    time_slot_start,
+    time_slot_end,
+    days_selected,
+    streak = []
+  } = project;
 
   const dayNameToNumber: Record<string, number> = {
     Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
@@ -174,46 +185,58 @@ export const generateCalendarEvents = (project: any, videos: any[]): VideoEvent[
   let videoIdx = 0;
 
   while (date <= lastDate && videoIdx < videos.length) {
-    const iso = date.toISOString().slice(0, 10);
     const dow = date.getDay();
-
-    const match = dayNumbers.includes(dow) || (days_selected as string[]).includes(iso);
-
-    if (match) {
+    if (dayNumbers.includes(dow)) {
       const [sh, sm] = (time_slot_start as string).split(':').map(Number);
       const [eh, em] = (time_slot_end as string).split(':').map(Number);
 
-      const start = new Date(date);
-      start.setHours(sh, sm, 0, 0);
+      const slotStart = new Date(date);
+      slotStart.setHours(sh, sm, 0, 0);
 
-      const end = new Date(start);
+      const slotEnd = new Date(slotStart);
       if (eh < sh || (eh === 0 && em === 0)) {
-        end.setDate(end.getDate() + 1);
+        slotEnd.setDate(slotEnd.getDate() + 1);
       }
-      end.setHours(eh, em, 0, 0);
+      slotEnd.setHours(eh, em, 0, 0);
 
-      const video = videos[videoIdx];
-      const completed = Boolean(streak[videoIdx]);
+      let remainingMinutes = (slotEnd.getTime() - slotStart.getTime()) / 60000;
 
-      events.push({
-        id: `${project._id}-${videoIdx}-${iso}`,
-        title: video.title,
-        description: `Video ${videoIdx + 1}/${videos.length}: ${video.title}`,
-        duration: (end.getTime() - start.getTime()) / 60000,
-        scheduledDate: start,
-        scheduledTime: time_slot_start,
-        completed,
-        videoUrl: video.url,
-        thumbnail: video.thumbnail || '',
-        projectId: project._id,
-        projectName: project.title
-      });
-      
-      videoIdx++;
+      while (videoIdx < videos.length) {
+        const vid = videos[videoIdx];
+        const vidMinutes = parseDurationToMinutes(vid.duration);
+        
+        if (vidMinutes === 0) {
+          videoIdx++;
+          continue;
+        }
+        
+        if (remainingMinutes >= vidMinutes) {
+          const eventDate = new Date(slotStart);
+
+          events.push({
+            id: `${project._id}-${videoIdx}-${eventDate.toISOString().slice(0,10)}`,
+            title: vid.title,
+            description: `Video ${videoIdx + 1}/${videos.length}: ${vid.title}`,
+            duration: vidMinutes,
+            scheduledDate: eventDate,
+            scheduledTime: time_slot_start,
+            completed: Boolean(streak[videoIdx]),
+            videoUrl: vid.url,
+            thumbnail: vid.thumbnail || '',
+            projectId: project._id,
+            projectName: project.title,
+          });
+
+          remainingMinutes -= vidMinutes;
+          videoIdx++;
+        } else {
+          break;
+        }
+      }
     }
+
     date = addDays(date, 1);
   }
 
   return events;
 };
-

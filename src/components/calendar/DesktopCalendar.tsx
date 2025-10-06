@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { VideoEvent, CalendarView } from '@/types/calendar';
-import { EventCard } from './EventCard';
 import { 
   format, 
   isSameDay, 
@@ -23,7 +22,8 @@ import {
   Clock,
   Play,
   Video,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 
 interface DesktopCalendarProps {
@@ -45,9 +45,15 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
   onEventComplete,
   onEventClick
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // Default to today
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [hoveredEvent, setHoveredEvent] = useState<{ event: VideoEvent; x: number; y: number } | null>(null);
+  const [hoveredEvent, setHoveredEvent] = useState<{ 
+    event: VideoEvent; 
+    x: number; 
+    y: number;
+    actualStartTime: string;
+    actualDuration: number;
+  } | null>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -75,7 +81,12 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     onDateChange(date);
   };
 
-  const handleEventHover = (event: VideoEvent, e: React.MouseEvent) => {
+  const handleEventHover = (
+    event: VideoEvent, 
+    e: React.MouseEvent, 
+    actualStartTime?: string, 
+    actualDuration?: number
+  ) => {
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
@@ -85,7 +96,9 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     setHoveredEvent({
       event,
       x: rect.left + rect.width / 2,
-      y: rect.bottom
+      y: rect.bottom,
+      actualStartTime: actualStartTime || event.scheduledTime || '',
+      actualDuration: actualDuration || event.duration
     });
   };
 
@@ -106,15 +119,23 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     setHoveredEvent(null);
   };
 
+  // Helper to format minutes to time string
+  const formatMinutesToTime = (totalMinutes: number): string => {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = Math.floor(totalMinutes % 60);
+    const isPM = hours >= 12;
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${displayHour}:${mins.toString().padStart(2, '0')} ${isPM ? 'PM' : 'AM'}`;
+  };
+
   // Tooltip Component
   const EventTooltip = () => {
     if (!hoveredEvent) return null;
 
-    const { event, x, y } = hoveredEvent;
+    const { event, x, y, actualStartTime, actualDuration } = hoveredEvent;
     const tooltipWidth = 320;
     const viewportWidth = window.innerWidth;
     
-    // Adjust position to keep tooltip within viewport
     let tooltipX = x - tooltipWidth / 2;
     if (tooltipX < 10) tooltipX = 10;
     if (tooltipX + tooltipWidth > viewportWidth - 10) tooltipX = viewportWidth - tooltipWidth - 10;
@@ -130,7 +151,6 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
         onMouseEnter={handleTooltipEnter}
         onMouseLeave={handleTooltipLeave}
       >
-        {/* Tooltip Arrow */}
         <div
           className="absolute w-3 h-3 bg-white border-l border-t border-gray-200 transform rotate-45"
           style={{
@@ -140,7 +160,6 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
         />
 
         <div className="space-y-3">
-          {/* Title */}
           <div className="flex items-start justify-between gap-2">
             <h4 className="font-semibold text-gray-900 text-sm leading-tight">{event.title}</h4>
             {event.completed && (
@@ -150,7 +169,6 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
             )}
           </div>
 
-          {/* Description */}
           {event.description && (
             <div className="flex items-start gap-2">
               <FileText className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
@@ -158,25 +176,20 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
             </div>
           )}
 
-          {/* Scheduled Time */}
-          {event.scheduledTime && (
+          {actualStartTime && (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-gray-400" />
-              <span className="text-xs text-gray-700 font-medium">{event.scheduledTime}</span>
+              <span className="text-xs text-gray-700 font-medium">{actualStartTime}</span>
             </div>
           )}
 
-          {/* Duration */}
-          {event.duration > 0 && (
-            <div className="flex items-center gap-2">
-              <Video className="h-4 w-4 text-gray-400" />
-              <span className="text-xs text-gray-700">
-                Duration: {Math.floor(event.duration / 60)}h {event.duration % 60}m
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Video className="h-4 w-4 text-gray-400" />
+            <span className="text-xs text-gray-700">
+              Duration: {Math.floor(actualDuration / 60)}h {actualDuration % 60}m
+            </span>
+          </div>
 
-          {/* Video URL */}
           {event.videoUrl && (
             <div className="pt-2 border-t border-gray-100">
               <a
@@ -196,7 +209,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     );
   };
 
-  // ---------------- MONTH VIEW ----------------
+  // ---------------- MONTH VIEW with Tooltip ----------------
   const renderMonthView = () => {
     const days = generateCalendarDays(currentDate);
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -295,7 +308,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     const hourHeightPx = 64;
 
     const parseScheduledTime = (s?: string) => {
-      if (!s) return { start: 9, end: 10 };
+      if (!s) return { start: 9 };
       const parts = s.split('-').map(p => p.trim());
       const parsePart = (p: string) => {
         const m = p.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
@@ -307,9 +320,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
         if (ampm === 'AM' && hr === 12) hr = 0;
         return hr + mins / 60;
       };
-      const start = parsePart(parts[0]);
-      const end = parts[1] ? parsePart(parts[1]) : start + 1;
-      return { start, end };
+      return { start: parsePart(parts[0]) };
     };
 
     const getCurrentTimePosition = () => {
@@ -358,7 +369,11 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
           <div className="sticky top-0 z-20 bg-gray-50 border-b flex">
             <div className="w-20 h-12 border-r flex-shrink-0" />
             {days.map((day, idx) => (
-              <div key={day.date.toISOString()} className={`flex-1 text-center py-3 font-medium text-sm border-r last:border-0 ${day.isToday ? 'text-[#5d57ee] bg-[#5d57ee]/5' : 'text-gray-700'}`}>
+              <div 
+                key={day.date.toISOString()} 
+                className={`flex-1 text-center py-3 font-medium text-sm border-r last:border-0 cursor-pointer hover:bg-gray-100 transition-colors ${day.isToday ? 'text-[#5d57ee] bg-[#5d57ee]/5' : 'text-gray-700'}`}
+                onClick={() => handleDateClick(day.date)}
+              >
                 {weekDays[idx].slice(0, 3)} {format(day.date, 'd')}
               </div>
             ))}
@@ -383,11 +398,23 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
               </>
             )}
 
-            {days.map((day, dIdx) =>
-              getEventsForDate(events, day.date).map((event) => {
-                const { start, end } = parseScheduledTime(event.scheduledTime);
-                const topPosition = start * hourHeightPx;
-                const eventHeight = Math.max((end - start) * hourHeightPx, 50);
+            {days.map((day, dIdx) => {
+              const dayEvents = getEventsForDate(events, day.date);
+              if (dayEvents.length === 0) return null;
+
+              const { start: slotStartHour } = parseScheduledTime(dayEvents[0]?.scheduledTime);
+              let cumulativeMinutes = 0;
+
+              return dayEvents.map((event) => {
+                const videoDurationMinutes = event.duration;
+                const startPositionHours = slotStartHour + (cumulativeMinutes / 60);
+                const startMinutesFromMidnight = startPositionHours * 60;
+                const actualStartTime = formatMinutesToTime(startMinutesFromMidnight);
+                
+                const topPosition = startPositionHours * hourHeightPx;
+                const eventHeight = Math.max((videoDurationMinutes / 60) * hourHeightPx, 50);
+                
+                cumulativeMinutes += videoDurationMinutes;
                 
                 return (
                   <div
@@ -404,7 +431,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
                       e.stopPropagation();
                       onEventClick(event);
                     }}
-                    onMouseEnter={(e) => handleEventHover(event, e)}
+                    onMouseEnter={(e) => handleEventHover(event, e, actualStartTime, videoDurationMinutes)}
                     onMouseLeave={handleEventLeave}
                   >
                     <div className="flex items-start justify-between gap-1 mb-1">
@@ -434,20 +461,14 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
                       )}
                     </div>
 
-                    {event.scheduledTime && eventHeight > 40 && (
+                    {eventHeight > 40 && (
                       <div className="text-[10px] opacity-90 flex items-center gap-1 mb-1">
                         <Clock className="h-2.5 w-2.5" />
-                        {event.scheduledTime}
+                        {Math.floor(videoDurationMinutes / 60)}h {videoDurationMinutes % 60}m
                       </div>
                     )}
 
-                    {event.duration > 0 && eventHeight > 60 && (
-                      <div className="text-[10px] opacity-80">
-                        {Math.floor(event.duration / 60)}h {event.duration % 60}m
-                      </div>
-                    )}
-
-                    {event.videoUrl && eventHeight > 70 && (
+                    {event.videoUrl && eventHeight > 60 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -461,9 +482,102 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
                     )}
                   </div>
                 );
-              })
-            )}
+              });
+            })}
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ---------------- TODAY'S EVENTS SECTION (Always Visible) ----------------
+  const renderEventsSection = () => {
+    if (!selectedDate) return null;
+
+    const selectedDayEvents = getEventsForDate(events, selectedDate);
+    const isToday = isSameDay(selectedDate, new Date());
+
+    return (
+      <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold  text-[#5d57ee]">
+            Events for {isToday ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}
+          </h3>
+          {!isToday && (
+            <button 
+              onClick={() => setSelectedDate(null)} 
+              className="text-gray-400 hover:text-gray-600 transition-colors rounded-full p-1"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {selectedDayEvents.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No videos scheduled for this day</p>
+            </div>
+          ) : (
+            selectedDayEvents.map((event) => (
+              <div
+                key={event.id}
+                className="bg-gray-50  rounded-xl p-4 border border-gray-200 hover:border-[#5d57ee] transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1">{event.title}</h4>
+                    <p className="text-xs text-gray-600 line-clamp-2">{event.description}</p>
+                  </div>
+                  
+                  {event.completed ? (
+                    <button
+                      onClick={() => onEventComplete(event.id, true)}
+                      className="ml-2 bg-green-500 text-white rounded p-1.5 hover:bg-green-600 transition-colors"
+                      title="Unmark Complete"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onEventComplete(event.id, false)}
+                      className="ml-2 bg-gray-200 text-gray-600 rounded p-1.5 hover:bg-gray-300 transition-colors"
+                      title="Mark Complete"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {event.scheduledTime}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Video className="h-3 w-3" />
+                      {Math.floor(event.duration / 60)}h {event.duration % 60}m
+                    </span>
+                  </div>
+
+                  {event.videoUrl && (
+                    <a
+                      href={event.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[#5d57ee] hover:text-[#4a47cc] font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Play className="h-3 w-3" />
+                      Watch
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     );
@@ -472,50 +586,11 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
   return (
     <div className="space-y-6">
       {view === 'month' ? renderMonthView() : renderWeekView()}
-
-      {/* Event Tooltip */}
+      
       <EventTooltip />
+      
 
-      {selectedDate && (
-        <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#5d57ee]">
-              Events for {format(selectedDate, 'EEEE, MMMM d')}
-            </h3>
-            <button onClick={() => setSelectedDate(null)} className="text-gray-400 hover:text-gray-600 transition-colors rounded-full p-1">
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {(() => {
-              const selectedDayEvents = getEventsForDate(events, selectedDate);
-              
-              if (selectedDayEvents.length === 0) {
-                return (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No videos scheduled for this day</p>
-                  </div>
-                );
-              }
-              
-              return selectedDayEvents.map((event) => (
-                <EventCard 
-                  key={event.id}
-                  event={event}
-                  onMarkComplete={onEventComplete}
-                  onEventClick={onEventClick}
-                  compact={false}
-                  showDate={false}
-                />
-              ));
-            })()}
-          </div>
-        </div>
-      )}
+      {renderEventsSection()}
     </div>
   );
 };

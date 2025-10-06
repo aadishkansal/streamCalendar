@@ -12,6 +12,7 @@ export interface IPlaylist extends Document {
   videos: {
     title: string;
     url: string;
+    duration: string;
   }[];
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +48,7 @@ const PlaylistSchema: Schema<IPlaylist> = new mongoose.Schema(
             message: "Invalid video URL format",
           },
         },
+        duration: { type: String, required: true },
       },
     ],
   },
