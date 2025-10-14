@@ -1,10 +1,19 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
-import { YplaylistType } from "@/schemas/Yplaylist";
+import MultiSlotSelector from "../../components/MultiSlotSelector";
+import VideoSelectionModal from "../../components/VideoSelectionModal";
+import type { YplaylistType } from "@/schemas/Yplaylist";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+
+type TimeSlot = {
+  id: string;
+  startTime: string;
+  endTime: string;
+};
 
 type RenderProps = {
   data: YplaylistType;
@@ -12,14 +21,18 @@ type RenderProps = {
 
 const Render: React.FC<RenderProps> = ({ data }) => {
   const { data: session, update } = useSession();
+  const router = useRouter();
+  
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
+  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     playlistId: data.playlistId,
     title: "",
     url: data.url,
     start_date: "",
     end_date: "",
-    time_slot_start: "",
-    time_slot_end: "",
     days_selected: [] as string[],
   });
 
@@ -33,16 +46,12 @@ const Render: React.FC<RenderProps> = ({ data }) => {
     { short: "S", full: "Saturday" },
   ];
 
-  const router = useRouter();
-
   useEffect(() => {
-    if (data?.playlistId) {
-      setFormData((prev) => ({
-        ...prev,
-        playlistId: data.playlistId,
-        url: data.url,
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      playlistId: data.playlistId,
+      url: data.url,
+    }));
   }, [data]);
 
   const toggleDay = (day: string) => {
@@ -54,141 +63,193 @@ const Render: React.FC<RenderProps> = ({ data }) => {
     }));
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof typeof formData
-  ) => {
+  const handleCheckboxEveryday = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
-      [key]: e.target.value,
+      days_selected: e.target.checked ? dayLabels.map((d) => d.full) : [],
     }));
   };
 
-  const handleCheckboxEveryday = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setFormData((prev) => ({
-        ...prev,
-        days_selected: dayLabels.map((d) => d.full),
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        days_selected: [],
-      }));
-    }
-  };
-
   const handleSubmit = async () => {
+    if (!formData.title) {
+      alert("Please add a project title");
+      return;
+    }
+
+    if (!formData.start_date || !formData.end_date) {
+      alert("Please select start and end dates");
+      return;
+    }
+
+    if (formData.days_selected.length === 0) {
+      alert("Please select at least one day");
+      return;
+    }
+
+    if (selectedSlots.length === 0) {
+      alert("Please add at least one time slot");
+      return;
+    }
+
+    if (selectedVideos.length === 0) {
+      alert("Please select at least one video");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      console.log(formData);
-      const response = await axios.post("/api/project-details", {
-        ...formData,
+      const payload = {
+        playlistId: formData.playlistId,
+        title: formData.title,
+        url: formData.url,
         start_date: new Date(formData.start_date),
         end_date: new Date(formData.end_date),
-      });
+        days_selected: formData.days_selected,
+        timeSlots: selectedSlots,
+        selectedVideos: selectedVideos,
+      };
+
+      const response = await axios.post("/api/project-details", payload);
+
       if (response.data.success) {
         await update({
           projectIds: response.data.updatedProjectIds,
         });
+        
         router.push("/projects?refresh=" + Date.now());
+      } else {
+        alert(response.data.message || "Failed to create project");
       }
-      console.log("✅ Success:", response.data);
-    } catch (err) {
-      console.error("❌ API Error:", err);
+    } catch (err: any) {
+      console.error("Error creating project:", err);
+      alert(
+        err.response?.data?.message || 
+        "Failed to create project. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleOpenVideoModal = () => {
+    if (!formData.playlistId) {
+      alert("Playlist ID is missing!");
+      return;
+    }
+    setShowVideoModal(true);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center bg-white drop-shadow-xl rounded-xl w-[520px] h-[740px] gap-5 p-6">
-      <div>
-        <img
-          src={data.thumbnail}
-          alt={data.title}
-          className="rounded-2xl mt-4 w-full h-[240px] place-items-center "
-        />
+    <div className="flex flex-col items-center justify-center bg-white drop-shadow-xl rounded-xl w-full max-w-[560px] mx-auto min-h-[850px] gap-5 p-4 sm:p-6">
+      <img
+        src={data.thumbnail}
+        alt={data.title}
+        className="rounded-2xl w-full h-[180px] sm:h-[240px] object-cover"
+      />
+
+      <div className="text-center w-full">
+        <h2 className="text-lg sm:text-xl font-bold px-2">{data.title}</h2>
+        <p className="text-sm sm:text-base text-gray-500 font-medium">{data.channelName}</p>
       </div>
 
-      <div className="text-center">
-        <h2 className="text-xl font-bold break-before-auto">{data.title}</h2>
-        <p className="text-gray-500 font-medium">{data.channelName}</p>
-      </div>
+      <input
+        className="w-full border-b-2 p-2 border-blue-500 focus:outline-none text-sm sm:text-base"
+        type="text"
+        placeholder="Add project title"
+        value={formData.title}
+        onChange={(e) =>
+          setFormData((prev) => ({ ...prev, title: e.target.value }))
+        }
+      />
 
-      <div className="flex flex-col mb-1 gap-3 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full text-sm">
+        <span className="font-medium whitespace-nowrap">Date:</span>
         <input
-          className="border-b-2 p-2 border-blue-500 font-normal focus:outline-none focus:ring-0"
-          type="text"
-          placeholder="Add title"
-          value={formData.title}
-          onChange={(e) => handleInputChange(e, "title")}
+          type="date"
+          className="focus:outline-[#5d57ee] border rounded-xl px-2 py-1 w-full sm:w-auto"
+          value={formData.start_date}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              start_date: e.target.value,
+            }))
+          }
         />
-        <div className="flex gap-2 items-center">
-          Date: From:
-          <input
-            type="date"
-            className="focus:outline-none focus:ring-0"
-            value={formData.start_date}
-            onChange={(e) => handleInputChange(e, "start_date")}
-          />
-          To:
-          <input
-            type="date"
-            className="focus:outline-none focus:ring-0"
-            value={formData.end_date}
-            onChange={(e) => handleInputChange(e, "end_date")}
-          />
-        </div>
-        <div className="flex gap-2 mt-1  items-center">
-          Time Slot:
-          <input
-            type="time"
-            className="focus:outline-none focus:ring-0"
-            value={formData.time_slot_start}
-            onChange={(e) => handleInputChange(e, "time_slot_start")}
-          />
-          To:
-          <input
-            type="time"
-            className="focus:outline-none focus:ring-0"
-            value={formData.time_slot_end}
-            onChange={(e) => handleInputChange(e, "time_slot_end")}
-          />
+        <span className="font-medium whitespace-nowrap">To:</span>
+        <input
+          type="date"
+          className="focus:outline-[#5d57ee] border rounded-xl px-2 py-1 w-full sm:w-auto"
+          value={formData.end_date}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              end_date: e.target.value,
+            }))
+          }
+        />
+      </div>
+
+      <div className="w-full">
+        <MultiSlotSelector selectedSlots={selectedSlots} onChange={setSelectedSlots} />
+      </div>
+
+      <div className="w-full flex justify-between items-center">
+        <button
+          type="button"
+          onClick={handleOpenVideoModal}
+          className="px-4 py-2 bg-[#5d57ee] text-white text-sm sm:text-base rounded-full hover:bg-[#5d57ee]/80 transition"
+        >
+          Select Videos ({selectedVideos.length})
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 w-full flex-wrap">
+        <span className="font-medium text-sm sm:text-base mr-2 w-full sm:w-auto">Repeat on:</span>
+        <div className="flex gap-2 flex-wrap">
+          {dayLabels.map(({ short, full }, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => toggleDay(full)}
+              className={`w-9 h-9 rounded-full border text-sm font-semibold transition-colors ${
+                formData.days_selected.includes(full)
+                  ? "bg-[#5d57ee] text-white border-transparent"
+                  : "border-black text-black hover:bg-gray-100"
+              }`}
+            >
+              {short}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mr-auto ">
-        Repeat on:
-        {dayLabels.map(({ short, full }, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => toggleDay(full)}
-            className={`w-9 h-9 rounded-full border text-sm font-semibold transition-colors ${
-              formData.days_selected.includes(full)
-                ? "bg-[#5d57ee] text-white border-transparent"
-                : "border-black text-black"
-            }`}
-          >
-            {short}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex gap-2 mt-1 mr-auto items-center">
+      <div className="flex gap-2 items-center w-full">
         <input
           type="checkbox"
-          className="appearance-none border border-black rounded-full size-5 checked:bg-[#5D57EE] focus:outline-none focus:ring-0"
+          className="appearance-none border border-black rounded-full size-5 checked:bg-[#5D57EE] focus:outline-none focus:ring-0 cursor-pointer"
           checked={formData.days_selected.length === 7}
           onChange={handleCheckboxEveryday}
         />
-        <label className="font-normal">Every Day</label>
+        <label className="font-normal text-sm sm:text-base">Every Day</label>
       </div>
 
       <Button
-        type="submit"
-        title="Create"
+        type="button"
+        title={isSubmitting ? "Creating..." : "Create Project"}
         variant="btn_big1"
         onClick={handleSubmit}
+        disabled={isSubmitting}
       />
+
+      {showVideoModal && (
+        <VideoSelectionModal
+          playlistId={formData.playlistId}
+          selected={selectedVideos}
+          onClose={() => setShowVideoModal(false)}
+          onSave={setSelectedVideos}
+        />
+      )}
     </div>
   );
 };

@@ -75,7 +75,6 @@ const convertToNumberArray = (days: any[]): number[] => {
   }).filter(day => day > 0);
 };
 
-// Helper function to format date consistently
 const formatDateKey = (date: Date | string): string => {
   const d = date instanceof Date ? date : new Date(date);
   const year = d.getFullYear();
@@ -113,21 +112,61 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = (props) => {
     fetchProjectData();
   }, [projectId]);
 
+
   const completionMap = useMemo(() => {
-    const map = new Map<string, { completed: boolean; completedOn?: string }>();
+    const map = new Map<string, {
+      totalVideos: number;
+      completedVideos: number;
+      completedOnSameDay: number;
+      completionPercentage: number;
+      isStreakEligible: boolean;
+    }>();
+
+    // Group events by date
+    const eventsByDate = new Map<string, VideoEvent[]>();
     
-    props.events.forEach((event, index) => {
+    props.events.forEach((event) => {
       const dateKey = formatDateKey(event.scheduledDate);
+      if (!eventsByDate.has(dateKey)) {
+        eventsByDate.set(dateKey, []);
+      }
+      eventsByDate.get(dateKey)!.push(event);
+    });
+
+    // Calculate completion stats for each day
+    eventsByDate.forEach((dayEvents, dateKey) => {
+      const totalVideos = dayEvents.length;
+      const completedVideos = dayEvents.filter(e => e.completed).length;
       
-      // Get completion timestamp from project data if available
-      const completionTimestamp = projectData?.completion_timestamps?.[index];
-      
+      // Count videos completed on the same day they were scheduled
+      const completedOnSameDay = dayEvents.filter(event => {
+        if (!event.completed) return false;
+        
+        // Find completion timestamp from projectData
+        const eventIndex = props.events.findIndex(e => e.id === event.id);
+        const completionTimestamp = projectData?.completion_timestamps?.[eventIndex];
+        
+        // If no timestamp, assume completed on same day (for backward compatibility)
+        if (!completionTimestamp) {
+          return true;
+        }
+        
+        const completedDate = formatDateKey(new Date(completionTimestamp));
+        return completedDate === dateKey;
+      }).length;
+
+      const completionPercentage = (completedOnSameDay / totalVideos) * 100;
+      const isStreakEligible = completionPercentage >= 50;
+
       map.set(dateKey, {
-        completed: event.completed,
-        completedOn: completionTimestamp ? formatDateKey(new Date(completionTimestamp)) : undefined
+        totalVideos,
+        completedVideos,
+        completedOnSameDay,
+        completionPercentage,
+        isStreakEligible
       });
     });
-    
+
     return map;
   }, [props.events, projectData]);
   

@@ -7,7 +7,7 @@ import Button from "./ui/Button";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
-import { Settings, User2Icon } from "lucide-react";
+import { Settings, User2Icon, Loader2 } from "lucide-react";
 
 
 function MainNavbarInner() {
@@ -30,18 +30,25 @@ function MainNavbarInner() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const calendarRef = useRef(null);
   const userDropdownRef = useRef(null);
 
   const handleLogout = async () => {
-    await signOut();
-    window.location.href = "/";
+    setIsLoggingOut(true);
+    try {
+      await signOut({ redirect: false });
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      setIsLoggingOut(false);
+    }
   };
 
   useEffect(() => {
     if (session?.user?.projectIds) {
       const used = session.user.projectIds.length;
-      setCredit(2 - used);
+      setCredit(4 - used);
     }
   }, [session]);
 
@@ -114,6 +121,17 @@ function MainNavbarInner() {
 
   return (
     <>
+      {/* Logging Out Overlay */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 shadow-2xl">
+            <Loader2 className="h-12 w-12 animate-spin text-[#5d57ee]" />
+            <p className="text-lg font-semibold text-gray-800">Logging out...</p>
+            <p className="text-sm text-gray-600">Please wait</p>
+          </div>
+        </div>
+      )}
+
       <nav className="flex justify-between items-center w-screen bg-slate-50 drop-shadow-xl rounded-xl fixed max-container p-4 py-1 mr-28 ml-24 mt-2 z-50">
         {/* Left section - Hamburger + Logo */}
         <div className="flex items-center justify-between  mobile-menu-overlay gap-3">
@@ -121,6 +139,7 @@ function MainNavbarInner() {
           <button
             onClick={toggleMobileMenu}
             className="flex flex-col justify-center lg:hidden items-center w-6 h-6 space-y-1"
+            disabled={isLoggingOut}
           >
             <span
               className={`block w-5 h-0.5 bg-gray-800 transition-all duration-300 ${
@@ -176,7 +195,7 @@ function MainNavbarInner() {
                 <Link
                   href={link.href}
                   key={link.key}
-                  className="text-[#221f1f] font-semibold whitespace-nowrap font-['inter'] flexCenter cursor-pointer transition-all pb-1.5 hover:text-[#5d57ee]"
+                  className="text-[#221f1f] font-semibold whitespace-nowrap font-['inter']  cursor-pointer transition-all pb-1.5 hover:text-[#5d57ee]"
                 >
                   {link.label}
                 </Link>
@@ -197,6 +216,7 @@ function MainNavbarInner() {
               variant="btn_purple"
               onClick={onSubmit}
               className="!w-[145px]"
+              disabled={isLoggingOut}
             />
           </div>
 
@@ -206,7 +226,7 @@ function MainNavbarInner() {
               src="/user1.svg"
               alt="User"
               className="min-w-10 min-h-10 rounded-full cursor-pointer"
-              onClick={() => setIsUserDropdownOpen((prev) => !prev)}
+              onClick={() => !isLoggingOut && setIsUserDropdownOpen((prev) => !prev)}
             />
 
             {isUserDropdownOpen && (
@@ -231,19 +251,30 @@ function MainNavbarInner() {
                       setIsUserDropdownOpen(false);
                     }}
                     className="!w-full !text-sm !py-2"
+                    disabled={isLoggingOut}
                   />
                 </div>
 
                 <ul className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:border hover:bg-slate-200 ">
                   <Settings />
-                  <span className="text-base" onClick={onSettings}>
+                  <span 
+                    className="text-base" 
+                    onClick={() => !isLoggingOut && onSettings()}
+                  >
                     Settings
                   </span>
                 </ul>
                 <ul className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:border hover:bg-slate-200 rounded-b-xl">
-                  <img src="/logout.svg" alt="Logout" className="w-5 h-5" />
-                  <span className="text-base" onClick={handleLogout}>
-                    Log Out
+                  {isLoggingOut ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-[#5d57ee]" />
+                  ) : (
+                    <img src="/logout.svg" alt="Logout" className="w-5 h-5" />
+                  )}
+                  <span 
+                    className={`text-base ${isLoggingOut ? 'text-gray-400' : ''}`}
+                    onClick={() => !isLoggingOut && handleLogout()}
+                  >
+                    {isLoggingOut ? 'Logging out...' : 'Log Out'}
                   </span>
                 </ul>
               </div>
@@ -253,12 +284,12 @@ function MainNavbarInner() {
       </nav>
 
       {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 mobile-menu-overlay bg-white z-40 pt-20">
-          <div className="flex flex-col h-full">
+      {isMobileMenuOpen && !isLoggingOut && (
+        <div className="lg:hidden fixed inset-0 mobile-menu-overlay  z-40 pt-20">
+          <div className="flex flex-col bg-white h-full">
             {/* Navigation Links */}
-            <div className="flex-1 px-6 py-8">
-              <ul className="space-y-6">
+            <div className="flex-1 text-center px-6 py-8">
+              <ul className="mt-16 space-y-4">
                 {navigationLink.map((link) => (
                   <li key={link.key}>
                     <Link
@@ -274,10 +305,10 @@ function MainNavbarInner() {
             </div>
 
             {/* Close Menu Button */}
-            <div className="p-6 border-t border-gray-200">
+            <div className="flex mb-20 p-6 border-t border-gray-200">
               <button
                 onClick={closeMobileMenu}
-                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
               >
                 Close Menu
               </button>
@@ -301,4 +332,4 @@ export default function MainNavbar() {
       <MainNavbarInner />
     </Suspense>
   );
-}                     
+}

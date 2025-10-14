@@ -4,6 +4,7 @@ import googleIcon1 from "../../../asset/googleIcon1.svg";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Navbar from "@/app/components/Navbar";
 
 export default function oSignUp() {
   const router = useRouter();
@@ -13,8 +14,10 @@ export default function oSignUp() {
 
   return (
     <div>
+       <Navbar/>
       <section className="flex justify-between ">
-        <div className=" hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 backdrop-blur-4xl brightness-120 h-screen w-[500px]"></div>
+        <div className=" hidden lg:flex bg-gradient-to-tr from-[#5d57ee]/90 to-purple-400 backdrop-blur-4xl brightness-120 h-screen w-[500px]">
+        </div>
         <div className="flex flex-col justify-center items-center w-full gap-12 h-screen">
           <h1 className="font-['inter'] text-[24px] font-bold max-md:text-[20px]">
             Sign up to Stream
@@ -34,13 +37,13 @@ export default function oSignUp() {
             variant="btn_big2"
             onClick={onSubmit}
           />
-          <p className="text-center max-md:text-[12px]">
+          <p className="text-center text-sm ">
             By creating an account you agree with our Terms of Service, Privacy
             Policy,
             <br /> and our default Notification Settings.
           </p>
           <h6 className="text-sm">
-            Already have an account? <Link href="/sign-in">Sign In</Link>
+            Already have an account? <Link href="/sign-in" className="hover:text-[#5D57EE] underline">Sign In</Link>
           </h6>
         </div>
       </section>

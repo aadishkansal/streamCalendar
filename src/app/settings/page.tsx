@@ -1,34 +1,30 @@
 "use client";
-import React, { use, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import MainNavbar from "../components/MainNavBar";
 import {
   BellIcon,
   HelpCircleIcon,
-  Settings2,
   ReceiptIndianRupeeIcon,
-  Eye,
-  EyeOff,
   Save,
   Trash2,
   Shield,
   User2,
   ArrowLeft,
   ChevronRight,
+  Package,
+  Zap,
+  RefreshCw,
+  CreditCard,
+  Download,
+  FileText,
+  Settings,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  CreditCard,
-  Download,
-  FileText,
-  Package,
-  RefreshCw,
-  Settings,
-  Zap,
-} from "lucide-react";
 import Footer from "../components/Footer";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -36,27 +32,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { signOut, useSession } from "next-auth/react";
-import { set } from "lodash";
 
 const invoices = [
-  {
-    id: "INV-001",
-    date: "Mar 1, 2024",
-    amount: "$29.00",
-    status: "Paid",
-  },
-  {
-    id: "INV-002",
-    date: "Feb 1, 2024",
-    amount: "$29.00",
-    status: "Paid",
-  },
-  {
-    id: "INV-003",
-    date: "Jan 1, 2024",
-    amount: "$29.00",
-    status: "Paid",
-  },
+  { id: "INV-001", date: "Mar 1, 2024", amount: "$29.00", status: "Paid" },
+  { id: "INV-002", date: "Feb 1, 2024", amount: "$29.00", status: "Paid" },
+  { id: "INV-003", date: "Jan 1, 2024", amount: "$29.00", status: "Paid" },
 ];
 
 interface FormData {
@@ -71,16 +51,16 @@ interface FormData {
 }
 
 const Setting = () => {
-  const { data: session } = useSession();
-  const [activeSection, setActiveSection] = useState("account");
-  const [showMobileMenu, setShowMobileMenu] = useState(true);
-  const [name, setName] = useState<string>(session?.user?.name || "");
+  const { data:session, status } = useSession();
   const router = useRouter();
   const { update } = useSession();
+
+  const [activeSection, setActiveSection] = useState("account");
+  const [showMobileMenu, setShowMobileMenu] = useState(true);
+  const [name, setName] = useState<string>("");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: session?.user?.name || "",
-    email: "",
-    password: "",
     notifications: {
       email: false,
       updates: false,
@@ -89,50 +69,37 @@ const Setting = () => {
   });
 
   const settingsItems = [
-    {
-      id: "account",
-      label: "Account",
-      icon: User2,
-    },
-    {
-      id: "privacy",
-      label: "Privacy",
-      icon: Shield,
-    },
-    {
-      id: "billing",
-      label: "Billing & Subscription",
-      icon: ReceiptIndianRupeeIcon,
-    },
-    {
-      id: "notification",
-      label: "Notification",
-      icon: BellIcon,
-    },
-    {
-      id: "support",
-      label: "Help & Support",
-      icon: HelpCircleIcon,
-    },
+    { id: "account", label: "Account", icon: User2 },
+    { id: "privacy", label: "Privacy", icon: Shield },
+    { id: "billing", label: "Billing & Subscription", icon: ReceiptIndianRupeeIcon },
+    { id: "notification", label: "Notification", icon: BellIcon },
+    { id: "support", label: "Help & Support", icon: HelpCircleIcon },
   ];
+
+  useEffect(() => {
+    if (session?.user) {
+      setName(session.user.name || "");
+    }
+  }, [session]);
 
   const submitNewName = async () => {
     try {
-      const res = await axios.put("/api/changeName", { name });
-      await update({
-        name: name,
-      });
+      setIsSaving(true);
+      await axios.put("/api/changeName", { name });
+      await update({ name });
+      
+      // Show success message
+      setShowSuccessMessage(true);
+      
+      // Hide after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
     } catch (error) {
       console.error("Error changing name", error);
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  useEffect(() => {
-    setName(session?.user?.name || "");
-  }, [session?.user?.name]);
-
-  const handleInputChange = (name: string) => {
-    setName(name);
   };
 
   const handleNotificationChange = (
@@ -155,10 +122,7 @@ const Setting = () => {
     if (response) {
       try {
         await axios.delete("/api/delete-user");
-        await signOut({
-          redirect: true,
-          callbackUrl: "/",
-        });
+        await signOut({ redirect: true, callbackUrl: "/" });
       } catch (error) {
         console.error("There was an error deleting the account!", error);
       }
@@ -171,113 +135,162 @@ const Setting = () => {
   };
 
   const handleBackClick = () => {
-    setShowMobileMenu(true);
+    if (showMobileMenu) {
+      router.back();
+    } else {
+      setShowMobileMenu(true);
+    }
   };
 
-  const renderAccountContent = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-2xl">
-        <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
+  const userEmail = session?.user?.email || "";
+
+  const LoadingSkeleton = () => (
+    <div className="space-y-6 animate-pulse">
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => handleInputChange(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 pr-10"
-            />
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
           </div>
-          <button
-            className="flex items-center space-x-2 px-4 font-semibold text-sm py-2 bg-gradient-to-r from-[#5d57ee] to-[#353188] font-['Inter'] text-white rounded-full hover:from-[#353188] hover:to-[#5d57ee] transition-colors"
-            onClick={submitNewName}
-          >
-            <Save size={16} />
-            <span>Save Changes</span>
-          </button>
+          <div>
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+          <div className="h-10 bg-gray-200 rounded w-32"></div>
         </div>
-      </div>
-
-      <div className="p-4 sm:p-6 rounded-xl bg-white shadow-2xl border border-red-200">
-        <p className="text-red-600 font-medium mb-4">
-          Once you delete your account, there is no going back. Please be
-          certain.
-        </p>
-        <button
-          onClick={deleteAccount}
-          className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors"
-        >
-          <Trash2 size={16} />
-          <span>Delete Account</span>
-        </button>
       </div>
     </div>
   );
 
+  const renderAccountContent = () => {
+    if (status === "loading") {
+      return <LoadingSkeleton />;
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-lg">
+          <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isSaving}
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#5d57ee] focus:border-transparent outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={userEmail}
+                readOnly
+                className="w-full p-3 border outline-none border-gray-300 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Email cannot be changed for security reasons
+              </p>
+            </div>
+
+            {/* Success Message */}
+            {showSuccessMessage && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <p className="text-sm font-medium text-green-800">
+                  Name updated successfully!
+                </p>
+              </div>
+            )}
+
+            <button
+              className="flex items-center space-x-2 px-4 font-semibold text-sm py-2 bg-gradient-to-r from-[#5d57ee] to-[#353188] text-white rounded-full hover:from-[#353188] hover:to-[#5d57ee] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={submitNewName}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>Save Changes</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6 rounded-xl bg-white shadow-lg border border-red-200">
+          <h3 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
+          <p className="text-gray-600 mb-4">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
+          <button
+            onClick={deleteAccount}
+            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors"
+          >
+            <Trash2 size={16} />
+            <span>Delete Account</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderNotificationsContent = () => (
     <div className="space-y-6">
-      <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200">
+      <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-lg">
         <h3 className="text-lg font-semibold mb-4">Notification Preferences</h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Email Notifications</h4>
-              <p className="text-sm text-gray-600">
-                Receive important updates via email
-              </p>
+          {[
+            {
+              key: "email",
+              title: "Email Notifications",
+              description: "Receive important updates via email",
+            },
+            {
+              key: "updates",
+              title: "Push Notifications",
+              description: "Receive notifications in your browser",
+            },
+            {
+              key: "marketing",
+              title: "Marketing Emails",
+              description: "Receive product updates and promotions",
+            },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">{item.title}</h4>
+                <p className="text-sm text-gray-600">{item.description}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.notifications[item.key as keyof typeof formData.notifications]}
+                  onChange={(e) =>
+                    handleNotificationChange(
+                      item.key as keyof FormData["notifications"],
+                      e.target.checked
+                    )
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.notifications.email}
-                onChange={(e) =>
-                  handleNotificationChange("email", e.target.checked)
-                }
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
-            </label>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Push Notifications</h4>
-              <p className="text-sm text-gray-600">
-                Receive notifications in your browser
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.notifications.updates}
-                onChange={(e) =>
-                  handleNotificationChange("updates", e.target.checked)
-                }
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
-            </label>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Marketing Emails</h4>
-              <p className="text-sm text-gray-600">
-                Receive product updates and promotions
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.notifications.marketing}
-                onChange={(e) =>
-                  handleNotificationChange("marketing", e.target.checked)
-                }
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#5d57ee]"></div>
-            </label>
-          </div>
+          ))}
         </div>
       </div>
     </div>
@@ -288,38 +301,28 @@ const Setting = () => {
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row">
           <div>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-gray-600 text-sm">
               Manage your subscription and billing details
             </p>
           </div>
         </div>
 
-        <Card className="mb-8 p-0">
+        <Card className="mb-8 p-0 shadow-lg">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Package className="text-primary size-5" />
+                  <Package className="text-[#5d57ee] size-5" />
                   <h2 className="text-lg font-semibold">Pro Plan</h2>
-                  <Badge className="border border-slate-300 rounded-xl">
-                    Current Plan
-                  </Badge>
+                  <Badge className="border border-slate-300 rounded-xl">Current Plan</Badge>
                 </div>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  $29/month • Renews on April 1, 2024
-                </p>
+                <p className="text-gray-600 mt-1 text-sm">$29/month • Renews on April 1, 2024</p>
               </div>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none"
-                >
+                <Button variant="outline" className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none">
                   Change Plan
                 </Button>
-                <Button
-                  variant="destructive"
-                  className="rounded-full hover:bg-[#5d57ee] hover:text-white flex-1 sm:flex-none"
-                >
+                <Button variant="destructive" className="rounded-full hover:bg-red-600 flex-1 sm:flex-none">
                   Cancel Plan
                 </Button>
               </div>
@@ -329,65 +332,50 @@ const Setting = () => {
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Zap className="text-primary size-4" />
+                    <Zap className="text-[#5d57ee] size-4" />
                     <span className="text-sm font-medium">API Requests</span>
                   </div>
                   <span className="text-sm">8,543 / 10,000</span>
                 </div>
-                <Progress
-                  value={85.43}
-                  className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border"
-                />
+                <Progress value={85.43} className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border" />
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <RefreshCw className="text-primary size-4" />
+                    <RefreshCw className="text-[#5d57ee] size-4" />
                     <span className="text-sm font-medium">Monthly Syncs</span>
                   </div>
                   <span className="text-sm">143 / 200</span>
                 </div>
-                <Progress
-                  value={71.5}
-                  className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border"
-                />
+                <Progress value={71.5} className="h-2 [&>div]:bg-[#5d57ee] border-slate-400 border" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="mb-8 p-0">
+        <Card className="mb-8 p-0 shadow-lg">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold">Payment Method</h2>
                 <div className="flex items-center gap-2">
-                  <CreditCard className="text-muted-foreground size-4" />
-                  <span className="text-muted-foreground text-sm">
-                    Visa ending in 4242
-                  </span>
+                  <CreditCard className="text-gray-600 size-4" />
+                  <span className="text-gray-600 text-sm">Visa ending in 4242</span>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto"
-              >
+              <Button variant="outline" className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto">
                 Update Payment Method
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="p-0">
+        <Card className="p-0 shadow-lg">
           <CardContent className="p-4 sm:p-6">
             <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row">
               <h2 className="text-lg font-semibold">Billing History</h2>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto"
-              >
+              <Button variant="outline" size="sm" className="rounded-full hover:bg-[#5d57ee] hover:text-white w-full sm:w-auto">
                 <Download className="mr-2 size-4" />
                 Download All
               </Button>
@@ -400,14 +388,12 @@ const Setting = () => {
                   className="flex flex-col items-start justify-between gap-3 border-b py-3 last:border-0 sm:flex-row sm:items-center"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="bg-muted rounded-md p-2">
-                      <FileText className="text-muted-foreground size-4" />
+                    <div className="bg-gray-100 rounded-md p-2">
+                      <FileText className="text-gray-600 size-4" />
                     </div>
                     <div>
                       <p className="font-medium">{invoice.id}</p>
-                      <p className="text-muted-foreground text-sm">
-                        {invoice.date}
-                      </p>
+                      <p className="text-gray-600 text-sm">{invoice.date}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
@@ -431,9 +417,8 @@ const Setting = () => {
   const renderSupportContent = () => (
     <div className="mx-auto max-w-lg">
       <div className="mb-10 text-center">
-        <p className="text-muted-foreground">
-          I'd love to hear from you. Please fill out the form below and I'll get
-          back to you as soon as possible.
+        <p className="text-gray-600">
+          I'd love to hear from you. Please fill out the form below and I'll get back to you as soon as possible.
         </p>
       </div>
 
@@ -441,67 +426,30 @@ const Setting = () => {
         <CardContent className="p-0">
           <form className="space-y-6">
             <div>
-              <Label htmlFor="name" className="mb-2 block font-semibold">
-                Name
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Your name"
-                required
-                className="rounded-xl border border-slate-400"
-              />
+              <Label htmlFor="name" className="mb-2 block font-semibold">Name</Label>
+              <Input id="name" placeholder="Your name" required className="rounded-xl border border-slate-400" />
             </div>
 
             <div>
-              <Label htmlFor="email" className="mb-2 block font-semibold">
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Your email address"
-                required
-                className="rounded-xl border border-slate-400"
-              />
+              <Label htmlFor="email" className="mb-2 block font-semibold">Email</Label>
+              <Input id="email" type="email" placeholder="Your email address" required className="rounded-xl border border-slate-400" />
             </div>
 
             <div>
-              <Label htmlFor="subject" className="mb-2 block font-semibold">
-                Subject
-              </Label>
-              <Input
-                id="subject"
-                name="subject"
-                placeholder="What's this regarding?"
-                required
-                className="rounded-xl border border-slate-400"
-              />
+              <Label htmlFor="subject" className="mb-2 block font-semibold">Subject</Label>
+              <Input id="subject" placeholder="What's this regarding?" required className="rounded-xl border border-slate-400" />
             </div>
 
             <div>
-              <Label htmlFor="message" className="mb-2 block font-semibold">
-                Message
-              </Label>
-              <Textarea
-                id="message"
-                name="message"
-                rows={5}
-                placeholder="Your message"
-                required
-                className="resize-none rounded-xl border border-slate-400"
-              />
+              <Label htmlFor="message" className="mb-2 block font-semibold">Message</Label>
+              <Textarea id="message" rows={5} placeholder="Your message" required className="resize-none rounded-xl border border-slate-400" />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full rounded-full text-white bg-gradient-to-r from-[#5d57ee] to-[#353188] transition-all duration-300 ease-in-out hover:from-[#353188] hover:to-[#5d57ee] hover:shadow-lg border-none outline-none font-semibold"
-            >
+            <Button type="submit" className="w-full rounded-full text-white bg-gradient-to-r from-[#5d57ee] to-[#353188] hover:from-[#353188] hover:to-[#5d57ee] font-semibold">
               Send Message
             </Button>
 
-            <p className="text-muted-foreground text-center text-sm">
+            <p className="text-gray-600 text-center text-sm">
               I'll respond to your message within 1-2 business days.
             </p>
           </form>
@@ -554,15 +502,22 @@ const Setting = () => {
   );
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen">
-      <div className="flex justify-center ml-2 w-full">
+    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50">
+      <div className="flex justify-center w-full">
         <MainNavbar />
       </div>
 
-      <div className="flex mt-16 sm:mt-24 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex mt-16 sm:mt-24 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Desktop Layout */}
-        <div className="hidden md:flex md:h-[640px] bg-gray-50 w-full">
-          {/* Desktop Sidebar */}
+        <div className="hidden md:flex md:h-[640px] mt-12 bg-gray-50 w-full relative">
+          <button
+            onClick={() => router.back()}
+            className="absolute -top-12 left-0 flex items-center gap-2 text-gray-600 hover:text-[#5d57ee] transition-colors group z-20"
+          >
+            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Back</span>
+          </button>
+
           <div className="w-80 bg-slate-100 mb-10 border-r rounded-s-xl border-white flex flex-col">
             <div className="p-6 border-b border-white">
               <div className="flex items-center space-x-3">
@@ -570,12 +525,8 @@ const Setting = () => {
                   <Settings className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Settings
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Manage your preferences
-                  </p>
+                  <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
+                  <p className="text-sm text-gray-600">Manage your preferences</p>
                 </div>
               </div>
             </div>
@@ -585,20 +536,15 @@ const Setting = () => {
                 {settingsItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeSection === item.id;
-
                   return (
                     <button
                       key={item.id}
                       onClick={() => setActiveSection(item.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all ${
-                        isActive
-                          ? "bg-violet-50 border-l-4 border-[#5d57ee]"
-                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        isActive ? "bg-violet-50 border-l-4 border-[#5d57ee]" : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      <Icon
-                        className={`w-5 h-5 ${isActive ? "text-[#5d57ee]" : "text-gray-500"}`}
-                      />
+                      <Icon className={`w-5 h-5 ${isActive ? "text-[#5d57ee]" : "text-gray-500"}`} />
                       <span className="font-medium">{item.label}</span>
                     </button>
                   );
@@ -607,7 +553,6 @@ const Setting = () => {
             </div>
           </div>
 
-          {/* Desktop Main Content */}
           <div className="flex-1 p-8 rounded-e-xl border-slate-100 mb-10 border overflow-y-auto">
             <div className="max-w-4xl">
               <h1 className="text-2xl font-semibold text-gray-900 mb-8">
@@ -621,41 +566,37 @@ const Setting = () => {
         {/* Mobile Layout */}
         <div className="md:hidden w-full">
           {showMobileMenu ? (
-            // Mobile Menu List
-            <div className="bg-gray-50 mt-8  min-h-[calc(100vh-8rem)] p-4">
+            <div className="bg-gray-50 mt-8 min-h-[calc(100vh-8rem)] p-4">
+              <button
+                onClick={handleBackClick}
+                className="flex items-center gap-2 text-gray-600 hover:text-[#5d57ee] transition-colors mb-4 group"
+              >
+                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                <span className="font-medium">Back</span>
+              </button>
+
               <div className="mb-6">
                 <div className="flex items-center space-x-3 mb-2">
                   <div className="w-10 h-10 bg-[#5d57ee] rounded-full flex items-center justify-center">
                     <Settings className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Settings
-                    </h2>
-                    <p className="text-sm text-gray-600">
-                      Manage your preferences
-                    </p>
+                    <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
+                    <p className="text-sm text-gray-600">Manage your preferences</p>
                   </div>
                 </div>
               </div>
               {renderMobileMenuList()}
             </div>
           ) : (
-            // Mobile Content View
             <div className="bg-gray-50 min-h-[calc(100vh-8rem)]">
               <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
                 <div className="flex items-center mt-4 space-x-3">
-                  <button
-                    onClick={handleBackClick}
-                    className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
+                  <button onClick={handleBackClick} className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                   </button>
                   <h1 className="text-lg font-semibold text-gray-900">
-                    {
-                      settingsItems.find((item) => item.id === activeSection)
-                        ?.label
-                    }
+                    {settingsItems.find((item) => item.id === activeSection)?.label}
                   </h1>
                 </div>
               </div>

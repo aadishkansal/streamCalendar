@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { VideoEvent, UseCalendarDataReturn } from '@/types/calendar';
@@ -17,29 +17,41 @@ export const useCalendarData = (projectId: string): UseCalendarDataReturn => {
         setLoading(true);
         setError(null);
         
-        const response = await axios.get(`/api/schedule-project/${projectId}`);
+        const projectRes = await axios.get(`/api/schedule-project/${projectId}`);
         
-        if (!response.data.success) {
-          throw new Error(response.data.message || 'Failed to load project');
+        if (!projectRes.data.success) {
+          throw new Error(projectRes.data.message || 'Failed to load project');
         }
 
-        const { project, videos } = response.data;
+        const project = projectRes.data.project;
 
         if (!project) {
           throw new Error('Project data is missing');
         }
 
-        if (!videos || videos.length === 0) {
-          console.warn('No videos found for this project');
+        const playlistRes = await axios.get(`/api/get-playlist-videos?playlistId=${project.playlistId}`);
+        const allVideos = playlistRes.data.videos || [];
+        
+        if (allVideos.length === 0) {
           setEvents([]);
           setLoading(false);
           return;
         }
 
-        const generated: VideoEvent[] = generateCalendarEvents(project, videos);
+        const selectedVideoIds = project.selectedVideos || [];
+        const filteredVideos = allVideos.filter((video: any) => 
+          selectedVideoIds.includes(video.id)
+        );
+
+        if (filteredVideos.length === 0) {
+          setEvents([]);
+          setLoading(false);
+          return;
+        }
+
+        const generated: VideoEvent[] = generateCalendarEvents(project, filteredVideos);
         setEvents(generated);
       } catch (err: any) {
-        console.error('Error loading calendar:', err);
         const errorMessage = err.response?.data?.message || err.message || 'Failed to load calendar data';
         setError(errorMessage);
         setEvents([]);
@@ -94,24 +106,30 @@ export const useCalendarData = (projectId: string): UseCalendarDataReturn => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(`/api/schedule-project/${projectId}`);
+      const projectRes = await axios.get(`/api/schedule-project/${projectId}`);
       
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Failed to load project');
+      if (!projectRes.data.success) {
+        throw new Error(projectRes.data.message || 'Failed to load project');
       }
 
-      const { project, videos } = response.data;
+      const project = projectRes.data.project;
+      const playlistRes = await axios.get(`/api/get-playlist-videos?playlistId=${project.playlistId}`);
+      const allVideos = playlistRes.data.videos || [];
+      
+      const selectedVideoIds = project.selectedVideos || [];
+      const filteredVideos = allVideos.filter((video: any) => 
+        selectedVideoIds.includes(video.id)
+      );
 
-      if (!videos || videos.length === 0) {
+      if (filteredVideos.length === 0) {
         setEvents([]);
         setLoading(false);
         return;
       }
 
-      const generated: VideoEvent[] = generateCalendarEvents(project, videos);
+      const generated: VideoEvent[] = generateCalendarEvents(project, filteredVideos);
       setEvents(generated);
     } catch (err: any) {
-      console.error('Error refetching calendar:', err);
       setError(err.response?.data?.message || err.message || 'Failed to reload calendar data');
     } finally {
       setLoading(false);

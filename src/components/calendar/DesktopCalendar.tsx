@@ -45,7 +45,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
   onEventComplete,
   onEventClick
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // Default to today
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hoveredEvent, setHoveredEvent] = useState<{ 
     event: VideoEvent; 
@@ -119,13 +119,49 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     setHoveredEvent(null);
   };
 
-  // Helper to format minutes to time string
-  const formatMinutesToTime = (totalMinutes: number): string => {
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = Math.floor(totalMinutes % 60);
-    const isPM = hours >= 12;
-    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    return `${displayHour}:${mins.toString().padStart(2, '0')} ${isPM ? 'PM' : 'AM'}`;
+  // ✅ Helper to detect overlapping events and assign columns
+  const getEventColumns = (dayEvents: VideoEvent[]) => {
+    const sorted = [...dayEvents].sort((a, b) => 
+      a.scheduledDate.getTime() - b.scheduledDate.getTime()
+    );
+
+    const columns: VideoEvent[][] = [];
+    
+    sorted.forEach(event => {
+      const eventStart = event.scheduledDate.getTime();
+      const eventEnd = eventStart + event.duration * 60000;
+      
+      let placed = false;
+      
+      // Try to place in existing column
+      for (let col of columns) {
+        const lastEvent = col[col.length - 1];
+        const lastEnd = lastEvent.scheduledDate.getTime() + lastEvent.duration * 60000;
+        
+        if (eventStart >= lastEnd) {
+          col.push(event);
+          placed = true;
+          break;
+        }
+      }
+      
+      // Create new column if couldn't place
+      if (!placed) {
+        columns.push([event]);
+      }
+    });
+
+    // Build map: event.id => { column, totalColumns }
+    const eventPositions = new Map<string, { column: number; totalColumns: number }>();
+    const totalCols = columns.length;
+    
+    columns.forEach((col, colIndex) => {
+      col.forEach(event => {
+        eventPositions.set(event.id, { column: colIndex, totalColumns: totalCols });
+      });
+    });
+
+    return eventPositions;
   };
 
   // Tooltip Component
@@ -209,7 +245,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     );
   };
 
-  // ---------------- MONTH VIEW with Tooltip ----------------
+  // ---------------- MONTH VIEW ----------------
   const renderMonthView = () => {
     const days = generateCalendarDays(currentDate);
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -297,7 +333,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     );
   };
 
-  // ---------------- WEEK VIEW ----------------
+  // ---------------- WEEK VIEW WITH OVERLAP HANDLING ----------------
   const renderWeekView = () => {
     const days = generateWeekDays(currentDate);
     const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -306,22 +342,6 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     );
 
     const hourHeightPx = 64;
-
-    const parseScheduledTime = (s?: string) => {
-      if (!s) return { start: 9 };
-      const parts = s.split('-').map(p => p.trim());
-      const parsePart = (p: string) => {
-        const m = p.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-        if (!m) return 9;
-        let hr = parseInt(m[1], 10);
-        const mins = m[2] ? parseInt(m[2], 10) : 0;
-        const ampm = (m[3] || '').toUpperCase();
-        if (ampm === 'PM' && hr !== 12) hr += 12;
-        if (ampm === 'AM' && hr === 12) hr = 0;
-        return hr + mins / 60;
-      };
-      return { start: parsePart(parts[0]) };
-    };
 
     const getCurrentTimePosition = () => {
       const hours = currentTime.getHours();
@@ -398,40 +418,45 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
               </>
             )}
 
+            {/* ✅ Events with overlap detection */}
             {days.map((day, dIdx) => {
               const dayEvents = getEventsForDate(events, day.date);
               if (dayEvents.length === 0) return null;
 
-              const { start: slotStartHour } = parseScheduledTime(dayEvents[0]?.scheduledTime);
-              let cumulativeMinutes = 0;
+              const eventPositions = getEventColumns(dayEvents);
 
               return dayEvents.map((event) => {
-                const videoDurationMinutes = event.duration;
-                const startPositionHours = slotStartHour + (cumulativeMinutes / 60);
-                const startMinutesFromMidnight = startPositionHours * 60;
-                const actualStartTime = formatMinutesToTime(startMinutesFromMidnight);
+                const eventStartTime = event.scheduledDate;
+                const hours = eventStartTime.getHours();
+                const minutes = eventStartTime.getMinutes();
+                const startHours = hours + minutes / 60;
+                const topPosition = startHours * hourHeightPx;
+                const eventHeight = Math.max((event.duration / 60) * hourHeightPx, 50);
                 
-                const topPosition = startPositionHours * hourHeightPx;
-                const eventHeight = Math.max((videoDurationMinutes / 60) * hourHeightPx, 50);
+                const position = eventPositions.get(event.id);
+                const column = position?.column ?? 0;
+                const totalColumns = position?.totalColumns ?? 1;
                 
-                cumulativeMinutes += videoDurationMinutes;
+                // ✅ Calculate width and left position based on columns
+                const columnWidth = 100 / totalColumns;
+                const leftOffset = column * columnWidth;
                 
                 return (
                   <div
                     key={event.id}
-                    className={`absolute z-10 rounded-xl px-3 py-1 shadow-md cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:z-20 group
+                    className={`absolute z-10 rounded-xl px-2 py-1 shadow-md cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:z-20 group
                       ${event.completed ? 'bg-green-500' : 'bg-[#5d57ee]'} text-white`}
                     style={{
                       top: `${topPosition}px`,
-                      left: `calc(80px + ((100% - 80px) / 7) * ${dIdx} + 4px)`,
-                      width: `calc((100% - 80px) / 7 - 8px)`,
+                      left: `calc(80px + ((100% - 80px) / 7) * ${dIdx} + ((100% - 80px) / 7) * ${leftOffset / 100} + 4px)`,
+                      width: `calc((100% - 80px) / 7 * ${columnWidth / 100} - 8px)`,
                       height: `${eventHeight}px`,
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEventClick(event);
                     }}
-                    onMouseEnter={(e) => handleEventHover(event, e, actualStartTime, videoDurationMinutes)}
+                    onMouseEnter={(e) => handleEventHover(event, e, format(eventStartTime, 'h:mm a'), event.duration)}
                     onMouseLeave={handleEventLeave}
                   >
                     <div className="flex items-start justify-between gap-1 mb-1">
@@ -464,7 +489,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
                     {eventHeight > 40 && (
                       <div className="text-[10px] opacity-90 flex items-center gap-1 mb-1">
                         <Clock className="h-2.5 w-2.5" />
-                        {Math.floor(videoDurationMinutes / 60)}h {videoDurationMinutes % 60}m
+                        {Math.floor(event.duration / 60)}h {event.duration % 60}m
                       </div>
                     )}
 
@@ -490,7 +515,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
     );
   };
 
-  // ---------------- TODAY'S EVENTS SECTION (Always Visible) ----------------
+  // ---------------- TODAY'S EVENTS SECTION ----------------
   const renderEventsSection = () => {
     if (!selectedDate) return null;
 
@@ -554,7 +579,7 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {event.scheduledTime}
+                      {format(event.scheduledDate, 'h:mm a')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Video className="h-3 w-3" />
@@ -589,7 +614,6 @@ export const DesktopCalendar: React.FC<DesktopCalendarProps> = ({
       
       <EventTooltip />
       
-
       {renderEventsSection()}
     </div>
   );

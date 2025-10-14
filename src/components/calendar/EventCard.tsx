@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { VideoEvent } from '@/types/calendar';
 import { formatDuration, getEventColor, isEventOverdue } from '@/lib/calendar-utils';
 import { Play, Clock, Check, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isBefore, startOfDay } from 'date-fns';
 
 interface EventCardProps {
   event: VideoEvent;
@@ -12,8 +12,8 @@ interface EventCardProps {
   onEventClick?: (event: VideoEvent) => void;
   compact?: boolean;
   showDate?: boolean;
-  // Provided by MobileCalendar to avoid duplicate slot start display
   computedStartTime?: string;
+  completionTimestamp?: Date | null;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({
@@ -22,10 +22,45 @@ export const EventCard: React.FC<EventCardProps> = ({
   onEventClick,
   compact = false,
   showDate = false,
-  computedStartTime
+  computedStartTime,
+  completionTimestamp
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHoveringRestricted, setIsHoveringRestricted] = useState(false);
+
+  const formatDateKey = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Check if video can be unmarked
+  const canUnmark = () => {
+    if (!event.completed) return true;
+    
+    const today = startOfDay(new Date());
+    const scheduledDate = startOfDay(event.scheduledDate);
+    
+    // If scheduled for today or future, allow unmarking
+    if (!isBefore(scheduledDate, today)) {
+      return true;
+    }
+    
+    // Past video - check if completed on same day
+    if (completionTimestamp) {
+      const completedDateKey = formatDateKey(completionTimestamp);
+      const scheduledDateKey = formatDateKey(event.scheduledDate);
+      
+      // If completed on the same day it was scheduled, restrict unmarking
+      if (completedDateKey === scheduledDateKey) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
 
   const mark = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -40,7 +75,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   const unmark = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isLoading) return;
+    if (isLoading || !canUnmark()) return;
     try {
       setIsLoading(true);
       await onMarkComplete(event.id, true);
@@ -66,6 +101,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   const eventColor = getEventColor(event);
   const isOverdue = isEventOverdue(event);
+  const isRestricted = event.completed && !canUnmark();
 
   // Compact mobile card
   if (compact) {
@@ -99,18 +135,36 @@ export const EventCard: React.FC<EventCardProps> = ({
 
           <div className="flex items-center space-x-2 ml-2">
             {event.completed ? (
-              <button
-                onClick={unmark}
-                disabled={isLoading}
-                className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors"
-                title="Unmark complete"
+              <div 
+                className="relative"
+                onMouseEnter={() => isRestricted && setIsHoveringRestricted(true)}
+                onMouseLeave={() => setIsHoveringRestricted(false)}
               >
-                {isLoading ? (
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
+                <button
+                  onClick={unmark}
+                  disabled={isLoading || isRestricted}
+                  className={`
+                    bg-white/20 rounded-full p-1 transition-colors
+                    ${isRestricted ? 'cursor-not-allowed opacity-50' : 'hover:bg-white/30'}
+                  `}
+                  title={isRestricted ? 'Cannot unmark videos completed on time' : 'Unmark complete'}
+                >
+                  {isLoading ? (
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                </button>
+
+                {/* Hover tooltip */}
+                {isHoveringRestricted && (
+                  <div className="absolute left-0 top-8 z-50 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 shadow-lg">
+                    <div className="font-semibold mb-1">Cannot unmark</div>
+                    <div>This video was completed on the scheduled day and counts toward your streak.</div>
+                    <div className="absolute -top-1 left-2 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                  </div>
                 )}
-              </button>
+              </div>
             ) : (
               <button
                 onClick={mark}
@@ -166,7 +220,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     );
   }
 
-  // Desktop card (kept for consistency; toggles enabled)
+  // Desktop card
   return (
     <div
       className={`
@@ -217,18 +271,36 @@ export const EventCard: React.FC<EventCardProps> = ({
             </button>
           )}
           {event.completed ? (
-            <button
-              onClick={unmark}
-              disabled={isLoading}
-              className="text-green-600 p-1"
-              title="Unmark complete"
+            <div 
+              className="relative"
+              onMouseEnter={() => isRestricted && setIsHoveringRestricted(true)}
+              onMouseLeave={() => setIsHoveringRestricted(false)}
             >
-              {isLoading ? (
-                <div className="h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
+              <button
+                onClick={unmark}
+                disabled={isLoading || isRestricted}
+                className={`
+                  p-1
+                  ${isRestricted ? 'text-green-400 cursor-not-allowed opacity-50' : 'text-green-600 hover:text-green-700'}
+                `}
+                title={isRestricted ? 'Cannot unmark videos completed on time' : 'Unmark complete'}
+              >
+                {isLoading ? (
+                  <div className="h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
+
+
+              {isHoveringRestricted && (
+                <div className="absolute right-0 top-8 z-50 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 shadow-lg">
+                  <div className="font-semibold mb-1">Cannot unmark</div>
+                  <div>This video was completed on the scheduled day and counts toward your streak.</div>
+                  <div className="absolute -top-1 right-2 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                </div>
               )}
-            </button>
+            </div>
           ) : (
             <button
               onClick={mark}

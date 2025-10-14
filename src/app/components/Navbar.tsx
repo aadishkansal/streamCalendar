@@ -12,7 +12,7 @@ const Navbar = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const onSubmit = async () => {
-    router.push("/sign-up");
+    router.push("/o-sign-up");
   };
 
   const toggleMobileMenu = () => {
@@ -89,10 +89,10 @@ const Navbar = () => {
 
             {/* User Dropdown Menu */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 w-48 bg-white rounded-xl mt-4 shadow-lg border border-gray-200 py-2 z-50">
+              <div className="flex flex-col absolute justify-center items-center right-0 w-40 bg-white rounded-xl mt-4 shadow-lg border border-gray-200 py-2 z-50">
                 <Link
                   href="/sign-in"
-                  className="block px-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-base text-center font-bold hover:text-[#5d57ee] text-gray-700 hover:bg-gray-100"
                   onClick={() => setIsUserMenuOpen(false)}
                 >
                   Login
@@ -105,6 +105,7 @@ const Navbar = () => {
                     onClick={() => {
                       onSubmit();
                       setIsUserMenuOpen(false);
+                      
                     }}
                   />
                 </div>

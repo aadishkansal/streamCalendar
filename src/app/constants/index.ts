@@ -6,11 +6,11 @@ export const navLinks =[
     { href:"/plans" , key:"plans" , label:"Pricing"},
     { href:"/aboutUs" , key:"aboutUs" , label:"About us"},
     { href:"/support" , key:"support" , label:"Support"},
-]
+]   
 // navigation links after signed in 
 export const navigationLink =[
     { href:"/" , key:"home" , label:"Home"},
-    { href:"/projects" , key:"plans" , label:"Projects"},
+    { href:"/projects" , key:"projects" , label:"Projects"},
     { href:"/plans" , key:"plans" , label:"Pricing"},
     { href:"/support" , key:"support" , label:"Support"},
 ]

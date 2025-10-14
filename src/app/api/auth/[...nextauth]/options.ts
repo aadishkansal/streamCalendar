@@ -49,6 +49,7 @@ export const authOptions: NextAuthOptions = {
             _id: user._id.toString(),
             name: user.name,
             username: user.username,
+            email: user.email, 
             projectIds: user.projectIds,
           };
         } catch (err: any) {
@@ -131,13 +132,13 @@ export const authOptions: NextAuthOptions = {
             token._id = dbUser._id.toString();
             token.name = dbUser.name;
             token.username = dbUser.username;
-            token.email = dbUser.email;
+            token.email = dbUser.email; 
             token.projectIds = dbUser.projectIds;
           }
         } else {
           token._id = user.id || (user as any)._id;
           token.name = user.name;
-          token.email = user.email;
+          token.email = user.email; 
           token.username = user.username;
           token.projectIds = user.projectIds;
         }
@@ -149,7 +150,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.name = dbUser.name;
           token.username = dbUser.username;
-          token.email = dbUser.email;
+          token.email = dbUser.email; 
           token.projectIds = dbUser.projectIds;
         }
       }
@@ -165,7 +166,7 @@ export const authOptions: NextAuthOptions = {
           token.projectIds = session.projectIds;
         }
         if (session.email) {
-          token.email = session.email;
+          token.email = session.email; 
         }
         if (session._id) {
           token._id = session._id;
@@ -181,6 +182,7 @@ export const authOptions: NextAuthOptions = {
           _id: token._id as string,
           name: token.name as string,
           username: token.username as string,
+          email: token.email as string, 
           projectIds: token.projectIds as any[],
         };
       }
@@ -191,6 +193,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           session.user.name = dbUser.name;
           session.user.username = dbUser.username;
+          session.user.email = dbUser.email; 
           session.user.projectIds = dbUser.projectIds;
         }
       } catch (e) {
@@ -205,7 +208,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60, 
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

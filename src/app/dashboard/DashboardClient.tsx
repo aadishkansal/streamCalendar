@@ -33,7 +33,7 @@ export default function DashboardClient({ userName }: Props) {
     const url = inputRef.current?.value?.trim();
     if (!url) return;
 
-    if (usedCredits >= 2) {
+    if (usedCredits >= 4) {
       console.log("Buy our premium");
       return;
     }
@@ -64,8 +64,8 @@ export default function DashboardClient({ userName }: Props) {
 
   // Check if button should be disabled
   const isButtonDisabled =
-    usedCredits >= 2 || loading || !inputRef.current?.value?.trim();
-  const remainingCredits = Math.max(0, 2 - usedCredits);
+    usedCredits >= 4 || loading || !inputRef.current?.value?.trim();
+  const remainingCredits = Math.max(0, 4 - usedCredits);
 
   return (
     <div className="w-screen">
@@ -91,7 +91,7 @@ export default function DashboardClient({ userName }: Props) {
           </div>
           <div className="text-white text-center">
             <p className="text-sm">
-              {usedCredits >= 2 ? (
+              {usedCredits >= 4 ? (
                 <span className="text-red-400 text-base font-semibold">
                   No credits remaining. Upgrade to premium for unlimited access!
                 </span>
@@ -120,16 +120,16 @@ export default function DashboardClient({ userName }: Props) {
 
             <button
               onClick={handleSubmit}
-              disabled={usedCredits >= 2 || loading}
+              disabled={usedCredits >= 4 || loading}
               className={`w-[180px] sm:w-[140px] h-[50px] rounded-full sm:rounded-e-full sm:rounded-s-none text-white font-semibold text-base mt-4 sm:mt-0 mx-auto sm:mx-0 transition-all duration-200 ${
-                usedCredits >= 2 || loading
+                usedCredits >= 4 || loading
                   ? "bg-gray-400 cursor-not-allowed opacity-60"
                   : "bg-gradient-to-r from-[#5d57ee] to-[#353188] hover:from-[#353188] hover:to-[#5d57ee] cursor-pointer"
               }`}
             >
               {loading
                 ? "Generating..."
-                : usedCredits >= 2
+                : usedCredits >= 4
                   ? "No Credits"
                   : "Generate"}
             </button>

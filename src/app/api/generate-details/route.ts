@@ -9,41 +9,29 @@ const API_KEY = process.env.YOUTUBE_API_KEY as string;
 
 export async function POST(request: NextRequest) {
   await dbConnect();
-  
+
   try {
+    // Authenticate
     const session = await getServerSession(authOptions);
     const user: User = session?.user as User;
-
     if (!session || !user) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Not authenticated" }),
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    const userId = new mongoose.Types.ObjectId(user._id);
+    // Parse request
     const { url } = await request.json();
-
-    if (!url || !userId) {
+    if (!url) {
       return NextResponse.json(
-        { success: false, message: "Missing playlist URL or user ID" },
+        { success: false, message: "Missing playlist URL" },
         { status: 400 }
       );
     }
 
-    const numberOfProjects = user.projectIds?.length;
-
-    if(numberOfProjects && numberOfProjects>=2){
-      return NextResponse.json(
-        { success: false, message: "Credits expired" },
-        { status: 400 }
-      );
-    }
-
-    // Extract Playlist ID from URL
-    const urlParams = new URL(url);
-    const playlistId = urlParams.searchParams.get("list");
-
+    // Extract YouTube playlist ID
+    const playlistId = new URL(url).searchParams.get("list");
     if (!playlistId) {
       return NextResponse.json(
         { success: false, message: "Invalid playlist URL" },
@@ -51,175 +39,146 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingPlaylist = await Playlist.findOne({ playlistId });
+    // Check credits
+    const projectCount = user.projectIds?.length || 0;
+    if (projectCount >= 4) {
+      return NextResponse.json(
+        { success: false, message: "Credits expired" },
+        { status: 400 }
+      );
+    }
 
-    if (existingPlaylist) {
+    // If playlist already in DB
+    const existing = await Playlist.findOne({ playlistId });
+    if (existing) {
       return NextResponse.json(
         {
           success: true,
           message: "Playlist already exists",
           data: {
-            playlistId: playlistId,
-            title: existingPlaylist.title,
-            thumbnail: existingPlaylist.thumbnail,
-            description: existingPlaylist.description,
-            channelName: existingPlaylist.channelName,
+            playlistId,
+            title: existing.title,
+            thumbnail: existing.thumbnail,
+            description: existing.description,
+            channelName: existing.channelName,
+            url: existing.url,
           },
         },
         { status: 200 }
       );
     }
 
-    // Fetch Playlist Details
-    const playlistRes = await fetch(
+    // Fetch playlist metadata
+    const plistRes = await fetch(
       `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistId}&key=${API_KEY}`
     );
-    const playlistData = await playlistRes.json();
-
-    if (!playlistData.items || playlistData.items.length === 0) {
+    const plistJson = await plistRes.json();
+    if (!plistJson.items?.length) {
       return NextResponse.json(
         { success: false, message: "Playlist not found" },
         { status: 404 }
       );
     }
+    const snippet = plistJson.items[0].snippet;
+    const playlistTitle = snippet.title;
+    const playlistThumbnail = snippet.thumbnails.high?.url || "";
+    const playlistDescription = snippet.description || "No description";
+    const channelName = snippet.channelTitle;
 
-    const playlist = playlistData.items[0];
-    const playlistTitle = playlist.snippet.title;
-    const playlistThumbnail = playlist.snippet.thumbnails?.high?.url;
-    const playlistDescription = playlist.snippet.description || "No description";
-    const totalVideos = playlist.contentDetails.itemCount;
-    const channelName = playlist.snippet.channelTitle;
-
-    // Fetch Playlist Videos
-    let totalDurationSeconds = 0;
+    // Fetch all videos and durations
     let nextPageToken = "";
-    let videoList: { title: string; url: string; duration: string }[] = [];
+    let totalSeconds = 0;
+    const videoList: { title: string; url: string; duration: string }[] = [];
 
     do {
-      const videosRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=50&pageToken=${nextPageToken}&key=${API_KEY}`
+      const itemsRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&pageToken=${nextPageToken}&key=${API_KEY}`
       );
-      const videosData = await videosRes.json();
+      const itemsJson = await itemsRes.json();
+      if (!itemsJson.items?.length) break;
 
-      if (!videosData.items || videosData.items.length === 0) break;
-
-      const videoIds = videosData.items
-        .map((item: any) => item.contentDetails.videoId)
+      const ids = itemsJson.items
+        .map((i: any) => i.contentDetails.videoId)
         .join(",");
+      if (!ids) break;
 
-      if (!videoIds) break; // Prevent API call with empty video IDs
-
-      // Fetch Video Durations
       const detailsRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${API_KEY}`
+        `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${API_KEY}`
       );
-      const detailsData = await detailsRes.json();
+      const detailsJson = await detailsRes.json();
 
-      videosData.items.forEach((item: any, index: number) => {
-        const videoTitle = item.snippet.title;
-        const videoId = item.contentDetails.videoId;
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-
-        const durationISO = detailsData.items[index]?.contentDetails?.duration;
-        const durationSeconds = durationISO ? parseDuration(durationISO) : 0;
-        totalDurationSeconds += durationSeconds;
-
+      itemsJson.items.forEach((item: any, idx: number) => {
+        const vidId = item.contentDetails.videoId;
+        const title = item.snippet.title;
+        const durISO = detailsJson.items[idx]?.contentDetails.duration;
+        const secs = parseDuration(durISO || "PT0S");
+        totalSeconds += secs;
         videoList.push({
-          title: videoTitle,
-          url: videoUrl,
-          duration: formatDuration(durationSeconds),
+          title,
+          url: `https://www.youtube.com/watch?v=${vidId}`,
+          duration: formatDuration(secs),
         });
       });
 
-      nextPageToken = videosData.nextPageToken || "";
+      nextPageToken = itemsJson.nextPageToken || "";
     } while (nextPageToken);
 
-    // Convert total duration to HH:MM:SS format
-    const totalDuration = formatDuration(totalDurationSeconds);
-
+    // Save playlist
     const playlistDb = new Playlist({
-      playlistId: playlistId,
+      playlistId,
       url,
       title: playlistTitle,
       thumbnail: playlistThumbnail,
       description: playlistDescription,
-      totalVideos,
-      totalDuration,
+      totalVideos: videoList.length,
+      totalDuration: formatDuration(totalSeconds),
       channelName,
       videos: videoList,
     });
-
     await playlistDb.save();
 
+    // Return YouTube ID, not Mongo _id
     return NextResponse.json(
       {
         success: true,
         message: "Details fetched successfully",
         data: {
-          playlistId: playlistDb._id,
+          playlistId,
           title: playlistTitle,
           thumbnail: playlistThumbnail,
           description: playlistDescription,
           channelName,
+          url,
         },
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Error getting details:", error);
+  } catch (error: any) {
+    console.error("Error in generate-details:", error);
     return NextResponse.json(
-      { success: false, message: "Error getting details" },
+      { success: false, message: "Error getting details", error: error.message },
       { status: 500 }
     );
   }
 }
 
-// Function to parse ISO 8601 duration (e.g., PT2H15M30S -> seconds)
-function parseDuration(duration: string): number {
-  const regex = /PT(\d+H)?(\d+M)?(\d+S)?/;
-  const matches = duration.match(regex);
-
-  const hours = matches?.[1] ? parseInt(matches[1].replace("H", "")) * 3600 : 0;
-  const minutes = matches?.[2] ? parseInt(matches[2].replace("M", "")) * 60 : 0;
-  const seconds = matches?.[3] ? parseInt(matches[3].replace("S", "")) : 0;
-
-  return hours + minutes + seconds;
+// Helpers
+function parseDuration(iso: string): number {
+  const m = iso.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  const h = m?.[1] ? parseInt(m[1].replace("H", "")) * 3600 : 0;
+  const min = m?.[2] ? parseInt(m[2].replace("M", "")) * 60 : 0;
+  const s = m?.[3] ? parseInt(m[3].replace("S", "")) : 0;
+  return h + min + s;
 }
 
-// Function to format seconds into HH:MM:SS
-function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+function formatDuration(total: number): string {
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${h.toString().padStart(2, "0")}:${m
+    .toString()
+    .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-/* 
-data -> 
-{
-  "success": true,
-  "message": "Details fetched successfully",
-  "data": {
-    "title": "Top 100 Songs 2024",
-    "thumbnail": "https://i.ytimg.com/vi/xyz123/hqdefault.jpg",
-    "description": "This is the top 100 songs playlist of 2024.",
-    "totalVideos": 100,
-    "totalDuration": "05:45:30",
-    "channelName": "Music Hits",
-    "videos": [
-      {
-        "title": "Song One",
-        "url": "https://www.youtube.com/watch?v=abc123"
-      },
-      {
-        "title": "Song Two",
-        "url": "https://www.youtube.com/watch?v=def456"
-      },
-      {
-        "title": "Song Three",
-        "url": "https://www.youtube.com/watch?v=ghi789"
-      }
-    ]
-  }
-}
-*/
+
+/* data -> { "success": true, "message": "Details fetched successfully", "data": { "title": "Top 100 Songs 2024", "thumbnail": "https://i.ytimg.com/vi/xyz123/hqdefault.jpg", "description": "This is the top 100 songs playlist of 2024.", "totalVideos": 100, "totalDuration": "05:45:30", "channelName": "Music Hits", "videos": [ { "title": "Song One", "url": "https://www.youtube.com/watch?v=abc123" }, { "title": "Song Two", "url": "https://www.youtube.com/watch?v=def456" }, { "title": "Song Three", "url": "https://www.youtube.com/watch?v=ghi789" } ] } } */

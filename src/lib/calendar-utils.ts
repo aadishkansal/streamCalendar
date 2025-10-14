@@ -14,16 +14,13 @@ import {
   isWeekend as isWeekendDate,
   addWeeks,
   subWeeks,
-  eachDayOfInterval,
   parseISO
 } from 'date-fns';
 import { CalendarDay, VideoEvent } from '@/types/calendar';
 
-// Helper to parse HH:MM:SS duration to minutes with null safety
 const parseDurationToMinutes = (duration: string | undefined): number => {
-  if (!duration || typeof duration !== 'string') {
-    return 0;
-  }
+  if (!duration || typeof duration !== 'string') return 0;
+  
   const parts = duration.split(':').map(Number);
   if (parts.length === 3) {
     const [hours, minutes, seconds] = parts;
@@ -144,11 +141,10 @@ export const formatDuration = (min: number): string => {
   return `${h}h ${m}m`;
 };
 
-export const  getEventColor = (event: VideoEvent): string =>
+export const getEventColor = (event: VideoEvent): string =>
   event.completed ? 'bg-green-500' : event.scheduledDate < new Date() ? 'bg-red-500' : 'bg-[#5d57ee]';
 
-export const getEventTextColor = (): string =>
-  'text-white';
+export const getEventTextColor = (): string => 'text-white';
 
 export const isEventOverdue = (event: VideoEvent): boolean =>
   !event.completed && event.scheduledDate < new Date();
@@ -157,14 +153,15 @@ export const generateCalendarEvents = (project: any, videos: any[]): VideoEvent[
   if (!project || !videos?.length) return [];
 
   const events: VideoEvent[] = [];
-  const {
-    start_date,
-    end_date,
-    time_slot_start,
-    time_slot_end,
-    days_selected,
-    streak = []
-  } = project;
+  const { start_date, end_date, timeSlots, days_selected, streak = [] } = project;
+
+  const slots = timeSlots && timeSlots.length > 0
+    ? timeSlots
+    : project.time_slot_start && project.time_slot_end
+    ? [{ startTime: project.time_slot_start, endTime: project.time_slot_end }]
+    : [];
+
+  if (slots.length === 0) return [];
 
   const dayNameToNumber: Record<string, number> = {
     Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
@@ -183,54 +180,97 @@ export const generateCalendarEvents = (project: any, videos: any[]): VideoEvent[
   let date = parseISO(start_date);
   const lastDate = parseISO(end_date);
   let videoIdx = 0;
+  let remainingVideoMinutes = 0;
+  let currentVideoTitle = '';
+  let currentVideoUrl = '';
+  let currentVideoThumbnail = '';
+  let partNumber = 0;
 
-  while (date <= lastDate && videoIdx < videos.length) {
+  const MAX_ITERATIONS = 1000;
+  let iterationCount = 0;
+
+  while (date <= lastDate && videoIdx < videos.length && iterationCount < MAX_ITERATIONS) {
+    iterationCount++;
     const dow = date.getDay();
+    
     if (dayNumbers.includes(dow)) {
-      const [sh, sm] = (time_slot_start as string).split(':').map(Number);
-      const [eh, em] = (time_slot_end as string).split(':').map(Number);
+      for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
+        const slot = slots[slotIndex];
 
-      const slotStart = new Date(date);
-      slotStart.setHours(sh, sm, 0, 0);
+        if (videoIdx >= videos.length && remainingVideoMinutes === 0) break;
 
-      const slotEnd = new Date(slotStart);
-      if (eh < sh || (eh === 0 && em === 0)) {
-        slotEnd.setDate(slotEnd.getDate() + 1);
-      }
-      slotEnd.setHours(eh, em, 0, 0);
+        const [sh, sm] = slot.startTime.split(':').map(Number);
+        const [eh, em] = slot.endTime.split(':').map(Number);
 
-      let remainingMinutes = (slotEnd.getTime() - slotStart.getTime()) / 60000;
+        const slotStart = new Date(date);
+        slotStart.setHours(sh, sm, 0, 0);
 
-      while (videoIdx < videos.length) {
-        const vid = videos[videoIdx];
-        const vidMinutes = parseDurationToMinutes(vid.duration);
+        const slotEnd = new Date(date);
+        slotEnd.setHours(eh, em, 0, 0);
         
-        if (vidMinutes === 0) {
-          videoIdx++;
-          continue;
+        if (slotEnd <= slotStart) {
+          slotEnd.setDate(slotEnd.getDate() + 1);
         }
-        
-        if (remainingMinutes >= vidMinutes) {
-          const eventDate = new Date(slotStart);
 
-          events.push({
-            id: `${project._id}-${videoIdx}-${eventDate.toISOString().slice(0,10)}`,
-            title: vid.title,
-            description: `Video ${videoIdx + 1}/${videos.length}: ${vid.title}`,
-            duration: vidMinutes,
-            scheduledDate: eventDate,
-            scheduledTime: time_slot_start,
-            completed: Boolean(streak[videoIdx]),
-            videoUrl: vid.url,
-            thumbnail: vid.thumbnail || '',
-            projectId: project._id,
-            projectName: project.title,
-          });
+        let remainingSlotMinutes = (slotEnd.getTime() - slotStart.getTime()) / 60000;
+        let currentTime = new Date(slotStart);
 
-          remainingMinutes -= vidMinutes;
-          videoIdx++;
-        } else {
-          break;
+        while (remainingSlotMinutes > 0 && (videoIdx < videos.length || remainingVideoMinutes > 0)) {
+          
+          if (remainingVideoMinutes === 0) {
+            const vid = videos[videoIdx];
+            const vidMinutes = parseDurationToMinutes(vid.duration);
+            
+            if (vidMinutes === 0) {
+              videoIdx++;
+              continue;
+            }
+
+            remainingVideoMinutes = vidMinutes;
+            currentVideoTitle = vid.title;
+            currentVideoUrl = vid.url;
+            currentVideoThumbnail = vid.thumbnail || '';
+            partNumber = 1;
+          }
+
+          const canFitMostOfVideo = remainingSlotMinutes >= (remainingVideoMinutes * 0.8);
+          
+          if (canFitMostOfVideo || remainingSlotMinutes >= remainingVideoMinutes) {
+            const scheduledMinutes = Math.min(remainingVideoMinutes, remainingSlotMinutes);
+            const title = (partNumber === 1 && remainingSlotMinutes >= remainingVideoMinutes)
+              ? currentVideoTitle
+              : `${currentVideoTitle} (Part ${partNumber})`;
+            
+            const eventDate = new Date(currentTime);
+
+            events.push({
+              id: `${project._id}-${videoIdx}-part${partNumber}-${eventDate.toISOString()}`,
+              title,
+              description: `Video ${videoIdx + 1}/${videos.length}: ${currentVideoTitle}`,
+              duration: scheduledMinutes,
+              scheduledDate: eventDate,
+              scheduledTime: format(eventDate, 'HH:mm'),
+              completed: Boolean(streak[videoIdx]),
+              videoUrl: currentVideoUrl,
+              thumbnail: currentVideoThumbnail,
+              projectId: project._id,
+              projectName: project.title,
+            });
+
+            currentTime = new Date(currentTime.getTime() + scheduledMinutes * 60000);
+            remainingSlotMinutes -= scheduledMinutes;
+            remainingVideoMinutes -= scheduledMinutes;
+            
+            if (remainingVideoMinutes === 0) {
+              videoIdx++;
+              partNumber = 0;
+            } else {
+              partNumber++;
+              break;
+            }
+          } else {
+            break;
+          }
         }
       }
     }

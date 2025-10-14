@@ -167,10 +167,10 @@ const SignUpPage = () => {
 </div>
 
                     {/* Terms & Conditions Checkbox */}
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex items-center gap-2 mt-3">
                         <input
                             type="checkbox"
-                            className="border border-[#5D57EE80] rounded-xl size-6"
+                            className="border accent-purple-700 border-[#5D57EE80] rounded-xl size-6"
                             onChange={() => setCheckBox(!checkBox)}
                         />
                         <label className="text-[12px]">
@@ -184,13 +184,14 @@ const SignUpPage = () => {
                         type="submit"
                         title="Sign up"
                         variant="btn_big1"
+                        className="mt-4"
                         onClick={() => {}}
                         disabled={!checkBox || isSubmitting || usernameAvailable === false || isCheckingUsername} // Prevent submission if username is taken or still checking
                     />
                 </form>
 
                 <h6 className="text-sm">
-                    Already have an account? <Link href="/sign-in">Sign In</Link>
+                    Already have an account? <Link href="/sign-in" className="hover:text-[#5D57EE] underline">Sign In</Link>
                 </h6>
             </div>
         </section></>

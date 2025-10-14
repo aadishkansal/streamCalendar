@@ -1,45 +1,73 @@
 import dbConnect from "@/lib/dbConnect";
-import { getServerSession, User } from "next-auth";
+import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
-import Project from "@/model/Project";
+import { NextResponse } from "next/server";
+import Project, { IProject } from "@/model/Project";
+import User from "@/model/User";
+import mongoose from "mongoose";
 
-export async function GET(req: Request){
-    await dbConnect();
+export async function GET() {
+  await dbConnect();
 
-    try {
-
-        const session = await getServerSession(authOptions);
-        const user: User = session?.user as User;
-
-        if(!session || !user){
-            return new Response(
-                JSON.stringify({ success: false, message: "Not authenticated" }),
-                { status: 401 }
-            );
-        }
-
-        const projects = await Project.find(
-            { _id: { $in: user.projectIds } }, 
-        ).select("_id title start_date end_date completed").lean(); // Add .lean() here
-
-        const transformedProjects = projects.map(project => ({
-            _id: project._id.toString(), // Convert ObjectId to string
-            title: project.title,
-            dateStart: project.start_date.toISOString(), // Convert Date to ISO string
-            dateEnd: project.end_date.toISOString(), // Convert Date to ISO string
-            completed: project.completed
-        }));
-
-        return Response.json(
-            { success: true, message: "Fetched projects", projects: transformedProjects},
-            { status: 200 }
-        );
-        
-    } catch (error) {
-        console.error("Error getting projects", error);
-        return Response.json(
-            { success: false, message: "Error getting projects" },
-            { status: 500 }
-        );
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?._id) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 }
+      );
     }
+
+    const userId = new mongoose.Types.ObjectId(session.user._id as string);
+
+    const user = await User.findById(userId).select("projectIds");
+    
+    if (!user || !user.projectIds || user.projectIds.length === 0) {
+      return NextResponse.json(
+        { success: true, message: "No projects found", projects: [] },
+        { status: 200 }
+      );
+    }
+
+    const projects = await Project.find({
+      _id: { $in: user.projectIds },
+    }).sort({ createdAt: -1 });
+
+    const transformedProjects = projects.map((project) => {
+      const projectObj = project.toObject() as IProject & { _id: mongoose.Types.ObjectId };
+      
+      return {
+        _id: projectObj._id.toString(),
+        title: projectObj.title,
+        dateStart: projectObj.start_date,
+        dateEnd: projectObj.end_date,
+        completed: projectObj.completed,
+        timeSlots: projectObj.timeSlots || [],
+        selectedVideos: projectObj.selectedVideos || [],
+        days_selected: projectObj.days_selected || [],
+        playlistId: projectObj.playlistId,
+        streak: projectObj.streak || [],
+      };
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Projects fetched successfully",
+        projects: transformedProjects,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("❌ Error fetching projects:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Error fetching projects",
+        error: error.message,
+      },
+      { status: 500 }
+    );
+  }
 }

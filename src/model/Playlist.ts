@@ -12,6 +12,7 @@ export interface IPlaylist extends Document {
   videos: {
     title: string;
     url: string;
+    thumbnail: string;
     duration: string;
   }[];
   createdAt: Date;
@@ -49,6 +50,7 @@ const PlaylistSchema: Schema<IPlaylist> = new mongoose.Schema(
           },
         },
         duration: { type: String, required: true },
+        thumbnail: { type: String, required: false }, 
       },
     ],
   },
