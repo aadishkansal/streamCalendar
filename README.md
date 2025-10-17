@@ -1,6 +1,6 @@
 # 🎯 StreamCalendar
 
-[🌐 Live Demo](https://stream-calendar-eight.vercel.app/) -  [GitHub Repo](https://github.com/aadishkansal/streamCalendar)
+[🌐 Live Demo](http://streamcalendar.vercel.app) -  [GitHub Repo](https://github.com/aadishkansal/streamCalendar)
 
 **StreamCalendar** is an intelligent scheduling platform that transforms how learners engage with YouTube educational content. Simply paste any YouTube playlist URL, and StreamCalendar automatically generates a personalized learning schedule—adapting dynamically based on your progress and consistency.
 
