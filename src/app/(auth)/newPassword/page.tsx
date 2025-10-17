@@ -25,14 +25,24 @@ function VerifyOtpInner() {
   });
 
   const onSubmit = async (data: z.infer<typeof confirmPasswordSchema>) => {
-    try {
-      await axios.patch("/api/set-new-pass", { ...data, email });
-      router.replace("/sign-in");
-    } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse>;
-      console.log(axiosError);
+  if (data.password !== data.confirmPassword) {
+    alert("Passwords do not match. Please make sure they’re identical.");
+    return;
+  }
+  try {
+    await axios.patch("/api/set-new-pass", { ...data, email });
+    router.replace("/sign-in");
+  } catch (error) {
+    const axiosError = error as AxiosError<ApiResponse>;
+    if (axiosError.response?.data?.message) {
+      alert(axiosError.response.data.message);
+    } else {
+      alert("Error resetting password. Please try again.");
     }
-  };
+    console.error(axiosError);
+  }
+};
+
 
   return (
     <>

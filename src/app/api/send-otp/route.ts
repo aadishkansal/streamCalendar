@@ -7,56 +7,36 @@ export async function POST(request: Request) {
 
   try {
     const { email } = await request.json();
-    const user = await UserModel.findOne({ email: email });
-
+    const user = await UserModel.findOne({ email });
     if (!user) {
-      return Response.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
-      );
+      return Response.json({ success: false, message: "User not found" }, { status: 404 });
     }
 
-    let otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const now = Date.now();
+    const expiry = user.forgotPassCodeExpiry?.getTime() || 0;
 
-    if (!user.forgotPassCodeExpiry) {
-      user.forgotPassCode = otpCode;
-      user.forgotPassCodeExpiry = new Date(Date.now() + 300 * 1000);
-      await user.save();  
-    }
-
-    if (user.forgotPassCodeExpiry < new Date()) {
+    if (expiry > now) {
       return Response.json(
         { success: false, message: "OTP already sent" },
         { status: 400 }
       );
-    } else {
-      user.forgotPassCode = otpCode;
-      user.forgotPassCodeExpiry = new Date(Date.now() + 300 * 1000);
-      await user.save();
     }
 
-    const username = user.username;
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.forgotPassCode = otpCode;
+    user.forgotPassCodeExpiry = new Date(now + 5 * 60 * 1000);
+    await user.save();
 
-    const emailResponse = await sendForgotPassEmail(
-      email,
-      username,
-      otpCode
-    );
+    const emailResponse = await sendForgotPassEmail(email, user.username, otpCode);
     if (!emailResponse.success) {
       return Response.json(
-        {
-          success: false,
-          message: emailResponse.message,
-        },
+        { success: false, message: emailResponse.message },
         { status: 500 }
       );
     }
 
     return Response.json(
-      {
-        success: true,
-        message: 'OTP successfully sent. Check your mail inbox',
-      },
+      { success: true, message: "OTP successfully sent. Check your mail inbox" },
       { status: 201 }
     );
   } catch (error) {
@@ -67,3 +47,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
