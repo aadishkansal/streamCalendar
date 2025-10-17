@@ -16,7 +16,12 @@ type EditScheduleModalProps = {
   currentEndDate: string;
   projectId: string;
   onClose: () => void;
-  onUpdated: (updateData: { slots: TimeSlot[]; days: string[]; startDate: string; endDate: string; }) => void;
+  onUpdated: (updateData: {
+    slots: TimeSlot[];
+    days: string[];
+    startDate: string;
+    endDate: string;
+  }) => void;
 };
 
 const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
@@ -32,14 +37,26 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
   const normalizeSlots = (slots: TimeSlot[]): TimeSlot[] => {
     return slots.map((slot, index) => ({
       ...slot,
-      id: slot.id || `slot-${Date.now()}-${index}`
+      id: slot.id || `slot-${Date.now()}-${index}`,
     }));
   };
 
-  const [slots, setSlots] = useState<TimeSlot[]>(() => normalizeSlots(currentSlots));
+  const formatForInput = (raw: string) => {
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  };
+
+  const [startDate, setStartDate] = useState<string>(() =>
+    formatForInput(currentStartDate)
+  );
+  const [endDate, setEndDate] = useState<string>(() =>
+    formatForInput(currentEndDate)
+  );
+  const [slots, setSlots] = useState<TimeSlot[]>(() =>
+    normalizeSlots(currentSlots)
+  );
   const [selectedDays, setSelectedDays] = useState<string[]>(currentDays);
-  const [startDate, setStartDate] = useState(currentStartDate);
-  const [endDate, setEndDate] = useState(currentEndDate);
   const [loading, setLoading] = useState(false);
 
   // ✅ Update slots when currentSlots change
@@ -90,9 +107,9 @@ const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
-          timeSlots: slots.map(slot => ({
+          timeSlots: slots.map((slot) => ({
             startTime: slot.startTime,
-            endTime: slot.endTime
+            endTime: slot.endTime,
           })),
           days_selected: selectedDays,
           start_date: new Date(startDate),
